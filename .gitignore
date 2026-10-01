@@ -83,3 +83,9 @@ temp/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Agent Configs & Scripts
+.agents/
+*.bat
+*.cmd
+*.ps1
