@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block page_title %}Role & Permission Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-action {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .btn-action:hover {
+        background: #F4F4F5;
+        color: var(--text-main);
+    }
+
+    .badge-system {
+        background-color: #18181B;
+        color: #FFFFFF;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .badge-custom {
+        background-color: #EFF6FF;
+        color: #2563EB;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .badge-user-count {
+        background-color: #F4F4F5;
+        color: #52525B;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .perm-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #F4F4F5;
+        border: 1px solid #E4E4E7;
+        color: #3F3F46;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        margin: 2px;
+    }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .premium-table th {
+        text-align: left;
+        padding: 14px 16px;
+        color: var(--text-light);
+        font-weight: 700;
+        font-size: 0.8rem;
+        border-bottom: 1px solid var(--border-subtle);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .premium-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-main);
+        font-size: 0.92rem;
+        vertical-align: middle;
+    }
+
+    .premium-table tr:hover td {
+        background-color: #FAFAFA;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="margin: 0; color: var(--text-main); font-weight: 800; font-size: 1.3rem; letter-spacing: -0.3px;">Role & Permission Groups</h3>
+            <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 0.88rem;">Kelola grup hak akses (Role), tentukan izin menu dan fitur untuk setiap grup pengguna secara granular.</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <form action="{{ url_for('admin_role_sync') }}" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-secondary" title="Sinkronkan daftar permission sistem dan default roles">
+                    <i class="ph ph-arrows-clockwise" style="font-size: 18px;"></i>
+                    Sinkronkan Default
+                </button>
+            </form>
+            <a href="{{ url_for('admin_role_add') }}" class="btn-primary">
+                <i class="ph ph-plus-circle" style="font-size: 18px;"></i>
+                Tambah Role Baru
+            </a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 500; {% if category == 'success' %}background-color: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;{% else %}background-color: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;{% endif %}">
+              {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div style="overflow-x: auto;">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">ID</th>
+                    <th style="min-width: 180px;">Nama Role Group</th>
+                    <th>Deskripsi</th>
+                    <th style="width: 110px;">Pengguna</th>
+                    <th style="min-width: 320px;">Hak Akses (Permissions)</th>
+                    <th style="text-align: right; width: 140px;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for role in roles %}
+                <tr>
+                    <td style="font-weight: 700; color: var(--text-light);">#{{ role.id }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-weight: 700; color: var(--text-main); font-size: 14px;">{{ role.name }}</span>
+                            {% if role.is_system %}
+                                <span class="badge-system"><i class="ph ph-shield-check"></i> System</span>
+                            {% else %}
+                                <span class="badge-custom"><i class="ph ph-user"></i> Custom</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 13px;">
+                        {{ role.description or '-' }}
+                    </td>
+                    <td>
+                        <span class="badge-user-count"><i class="ph ph-user"></i> {{ role.users|length }} user</span>
+                    </td>
+                    <td>
+                        {% if role.name == 'Administrator' %}
+                            <span style="display: inline-flex; align-items: center; gap: 6px; color: #166534; font-weight: 700; font-size: 12px; background: #DCFCE7; padding: 4px 10px; border-radius: 6px;">
+                                <i class="ph ph-check-circle"></i> Akses Penuh ke Seluruh Menu & Fitur Sistem
+                            </span>
+                        {% elif role.permissions %}
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; max-height: 85px; overflow-y: auto;">
+                                {% for p in role.permissions %}
+                                    <span class="perm-pill" title="{{ p.description or p.name }}">
+                                        <i class="ph ph-check" style="color: #10B981;"></i> {{ p.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span style="color: var(--text-light); font-size: 12px; font-style: italic;">Tidak ada permission aktif</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: flex; justify-content: flex-end; gap: 6px; align-items: center;">
+                            <a href="{{ url_for('admin_role_edit', role_id=role.id) }}" class="btn-action" title="Edit Permission Role">
+                                <i class="ph ph-pencil-simple" style="font-size: 16px; color: #2563EB;"></i> Edit
+                            </a>
+                            {% if not role.is_system %}
+                            <form action="{{ url_for('admin_role_delete', role_id=role.id) }}" method="POST" style="margin: 0; display: inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus role group &quot;{{ role.name }}&quot;?');">
+                                <button type="submit" class="btn-action" style="color: #EF4444;" title="Hapus Role Group">
+                                    <i class="ph ph-trash" style="font-size: 16px;"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        Belum ada role group terdaftar. Silakan klik tombol "Sinkronkan Default" di atas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+
+{% block title %}{{ target_title }} - Server Monitor{% endblock %}
+
+{% block content %}
+<style>
+    .query-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 20px;
+        align-items: start;
+    }
+    @media (max-width: 1100px) {
+        .query-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+    .query-card {
+        background: #ffffff;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+        padding: 20px 24px;
+        margin-bottom: 20px;
+    }
+    .target-bar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .select-target {
+        padding: 8px 14px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border-subtle);
+        background: #f8fafc;
+        font-size: 13.5px;
+        font-weight: 600;
+        outline: none;
+        min-width: 240px;
+        cursor: pointer;
+    }
+    .editor-wrapper {
+        position: relative;
+        margin-bottom: 14px;
+    }
+    .sql-editor {
+        width: 100%;
+        min-height: 140px;
+        background: #0f172a;
+        color: #f8fafc;
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 13.5px;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        outline: none;
+        resize: vertical;
+        box-sizing: border-box;
+        line-height: 1.5;
+    }
+    .sql-editor:focus {
+        border-color: var(--primary);
+    }
+    .query-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: var(--radius-pill);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    .btn-primary-custom { background: var(--primary); color: #fff; }
+    .btn-primary-custom:hover { background: #e04812; color: #fff; }
+    .btn-info-custom { background: #0284c7; color: #fff; }
+    .btn-info-custom:hover { background: #0369a1; color: #fff; }
+    .btn-default-custom { background: #f1f5f9; color: var(--text-main); border-color: var(--border-subtle); }
+    .btn-default-custom:hover { background: #e2e8f0; }
+
+    /* Result Table */
+    .result-container {
+        background: #ffffff;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        margin-top: 16px;
+    }
+    .result-header {
+        padding: 12px 18px;
+        background: #f8fafc;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .result-table-wrapper {
+        overflow-x: auto;
+        max-height: 480px;
+    }
+    .result-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+        font-family: 'Consolas', 'Courier New', monospace;
+    }
+    .result-table th {
+        background: #f1f5f9;
+        padding: 10px 14px;
+        font-weight: 700;
+        color: #334155;
+        border-bottom: 1px solid #cbd5e1;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        text-align: left;
+        white-space: nowrap;
+    }
+    .result-table td {
+        padding: 8px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        white-space: nowrap;
+        color: #1e293b;
+    }
+    .result-table tr:hover td {
+        background: #f8fafc;
+    }
+
+    /* History Sidebar */
+    .history-card {
+        background: #ffffff;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+        padding: 18px;
+    }
+    .history-item {
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid var(--border-subtle);
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .history-item:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        transform: translateY(-1px);
+    }
+    .history-query {
+        font-family: monospace;
+        font-size: 11.5px;
+        color: #0f172a;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .history-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 10.5px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+</style>
+
+<div class="content-header" style="margin-bottom: 20px;">
+    <h1 style="font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+        <i class="ph-duotone ph-code" style="color: var(--primary);"></i> {{ target_title|safe }}
+    </h1>
+    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+        Eksekusi query SQL langsung ke database remote melalui SSH Tunnel yang aman dan terenkripsi.
+    </p>
+</div>
+
+<div class="query-layout">
+    <!-- Main Query & Results Area -->
+    <div>
+        <div class="query-card">
+            <!-- Target Selection -->
+            <div class="target-bar">
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">PILIH TARGET KONEKSI:</label>
+                    <select id="targetSelect" class="select-target" onchange="onTargetChange()">
+                        <optgroup label="Aplikasi (Multi-Apps)">
+                            {% for a in apps %}
+                            <option value="app:{{ a.id }}" {% if app_id and app_id|string == a.id|string %}selected{% endif %}>
+                                App: {{ a.nama }} ({{ a.server.nama if a.server else '' }} - {{ a.db_name }})
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Server Host Direct">
+                            {% for s in servers %}
+                            <option value="server:{{ s.id }}" {% if not app_id and server_id and server_id|string == s.id|string %}selected{% endif %}>
+                                Server: {{ s.nama }} ({{ s.host }} - {{ s.db_name }})
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">BATAS BARIS (LIMIT):</label>
+                    <select id="limitSelect" class="select-target" style="min-width: 110px;">
+                        <option value="50">50 Baris</option>
+                        <option value="100" selected>100 Baris</option>
+                        <option value="500">500 Baris</option>
+                        <option value="1000">1000 Baris</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- SQL Textarea Editor -->
+            <div class="editor-wrapper">
+                <textarea id="sqlQueryText" class="sql-editor" placeholder="Tuliskan query SQL Anda di sini (contoh: SELECT * FROM users LIMIT 10;)...&#10;Tekan Ctrl + Enter untuk mengeksekusi langsung.">SELECT * FROM pg_tables WHERE schemaname = 'public' LIMIT 20;</textarea>
+            </div>
+
+            <!-- Query Controls -->
+            <div class="query-toolbar">
+                <div style="font-size: 12px; color: var(--text-muted);">
+                    <i class="ph ph-keyboard"></i> Shortcut: <kbd style="background:#e2e8f0; padding:2px 6px; border-radius:4px;">Ctrl + Enter</kbd>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-action btn-default-custom" onclick="clearEditor()">
+                        <i class="ph ph-eraser"></i> Bersihkan
+                    </button>
+                    <button type="button" id="btnRunQuery" class="btn-action btn-primary-custom" onclick="executeSQL()">
+                        <i class="ph ph-play"></i> Jalankan Query
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Box -->
+        <div id="resultCard" class="result-container" style="display: none;">
+            <div class="result-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #1e293b;">
+                        <i class="ph ph-table"></i> Hasil Eksekusi
+                    </span>
+                    <span id="badgeRowCount" style="background: #ecfdf5; color: #047857; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                        0 Baris
+                    </span>
+                    <span id="badgeElapsed" style="background: #eff6ff; color: #1d4ed8; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                        0 ms
+                    </span>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn-action btn-default-custom" style="padding: 4px 10px; font-size: 11.5px;" onclick="exportCSV()">
+                        <i class="ph ph-file-csv"></i> Ekspor CSV
+                    </button>
+                    <button type="button" class="btn-action btn-default-custom" style="padding: 4px 10px; font-size: 11.5px;" onclick="exportJSON()">
+                        <i class="ph ph-file-code"></i> Ekspor JSON
+                    </button>
+                </div>
+            </div>
+
+            <div id="errorAlert" style="display: none; padding: 14px 18px; background: #fef2f2; color: #991b1b; font-size: 12.5px; border-bottom: 1px solid #fecaca; font-family: monospace; white-space: pre-wrap;"></div>
+
+            <div class="result-table-wrapper" id="tableWrapper">
+                <table class="result-table" id="queryResultTable">
+                    <thead id="queryResultHead"></thead>
+                    <tbody id="queryResultBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Panel -->
+    <div>
+        <div class="history-card">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-clock-counter-clockwise" style="color: var(--primary);"></i> Riwayat Query
+            </h4>
+            <div id="historyList">
+                {% for h in recent_history %}
+                <div class="history-item" onclick="loadQuery({{ h.query_text|tojson }})">
+                    <div class="history-query" title="{{ h.query_text }}">{{ h.query_text }}</div>
+                    <div class="history-meta">
+                        <span style="color: {{ '#059669' if h.status == 'SUCCESS' else '#dc2626' }}; font-weight: 600;">
+                            {{ h.row_count }} baris &bull; {{ h.elapsed_ms }}ms
+                        </span>
+                        <span>{{ h.created_at[:16] if h.created_at else '' }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px 0;">
+                    Belum ada riwayat query.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var lastResults = [];
+var lastColumns = [];
+
+document.getElementById('sqlQueryText').addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        executeSQL();
+    }
+});
+
+function onTargetChange() {
+    var val = document.getElementById('targetSelect').value;
+    var parts = val.split(':');
+    var type = parts[0];
+    var id = parts[1];
+    var url = new URL(window.location.href);
+    url.searchParams.delete('server_id');
+    url.searchParams.delete('app_id');
+    if (type === 'app') {
+        url.searchParams.set('app_id', id);
+    } else {
+        url.searchParams.set('server_id', id);
+    }
+    window.location.href = url.toString();
+}
+
+function clearEditor() {
+    document.getElementById('sqlQueryText').value = '';
+    document.getElementById('sqlQueryText').focus();
+}
+
+function loadQuery(text) {
+    document.getElementById('sqlQueryText').value = text;
+    document.getElementById('sqlQueryText').focus();
+}
+
+function executeSQL() {
+    var queryText = document.getElementById('sqlQueryText').value.trim();
+    if (!queryText) {
+        alert('Silakan masukkan perintah SQL terlebih dahulu.');
+        return;
+    }
+
+    var targetVal = document.getElementById('targetSelect').value;
+    var parts = targetVal.split(':');
+    var serverId = parts[0] === 'server' ? parts[1] : '';
+    var appId = parts[0] === 'app' ? parts[1] : '';
+    var limit = document.getElementById('limitSelect').value;
+
+    var btn = document.getElementById('btnRunQuery');
+    var oldHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-arrows-clockwise ph-spin"></i> Menjalankan...';
+
+    var resCard = document.getElementById('resultCard');
+    var errAlert = document.getElementById('errorAlert');
+    var tHead = document.getElementById('queryResultHead');
+    var tBody = document.getElementById('queryResultBody');
+
+    resCard.style.display = 'block';
+    errAlert.style.display = 'none';
+    tHead.innerHTML = '';
+    tBody.innerHTML = '';
+
+    var formData = new FormData();
+    formData.append('query_text', queryText);
+    formData.append('limit', limit);
+    if (serverId) formData.append('server_id', serverId);
+    if (appId) formData.append('app_id', appId);
+
+    fetch("{{ url_for('monitor.sql_query') }}", {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
+
+        if (res.success) {
+            document.getElementById('badgeRowCount').innerText = (res.row_count || 0) + ' Baris';
+            document.getElementById('badgeElapsed').innerText = (res.elapsed_ms || 0) + ' ms';
+
+            lastColumns = res.columns || [];
+            lastResults = res.rows || [];
+
+            // Build Head
+            var headHtml = '<tr>';
+            lastColumns.forEach(function(col) {
+                headHtml += '<th>' + col + '</th>';
+            });
+            headHtml += '</tr>';
+            tHead.innerHTML = headHtml;
+
+            // Build Body
+            var bodyHtml = '';
+            lastResults.forEach(function(row) {
+                bodyHtml += '<tr>';
+                lastColumns.forEach(function(col) {
+                    var val = row[col];
+                    if (val === null || val === undefined) {
+                        bodyHtml += '<td style="color: #94a3b8; font-style: italic;">NULL</td>';
+                    } else {
+                        bodyHtml += '<td>' + String(val) + '</td>';
+                    }
+                });
+                bodyHtml += '</tr>';
+            });
+            tBody.innerHTML = bodyHtml;
+
+            // Update History sidebar
+            if (res.recent_history) {
+                updateHistoryUI(res.recent_history);
+            }
+        } else {
+            errAlert.style.display = 'block';
+            errAlert.innerText = 'Error: ' + (res.error || 'Terjadi kesalahan saat mengeksekusi SQL');
+            document.getElementById('badgeRowCount').innerText = '0 Baris';
+            document.getElementById('badgeElapsed').innerText = (res.elapsed_ms || 0) + ' ms';
+        }
+    })
+    .catch(function(err) {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
+        errAlert.style.display = 'block';
+        errAlert.innerText = 'Network/Server Error: ' + err;
+    });
+}
+
+function updateHistoryUI(historyList) {
+    var container = document.getElementById('historyList');
+    if (!container || !historyList.length) return;
+    var html = '';
+    historyList.forEach(function(h) {
+        var statusColor = h.status === 'SUCCESS' ? '#059669' : '#dc2626';
+        html += '<div class="history-item" onclick=\'loadQuery(' + JSON.stringify(h.query_text) + ')\'>' +
+            '<div class="history-query" title="' + h.query_text + '">' + h.query_text + '</div>' +
+            '<div class="history-meta">' +
+            '<span style="color: ' + statusColor + '; font-weight: 600;">' + h.row_count + ' baris &bull; ' + h.elapsed_ms + 'ms</span>' +
+            '<span>' + (h.created_at ? h.created_at.substring(0, 16) : '') + '</span>' +
+            '</div></div>';
+    });
+    container.innerHTML = html;
+}
+
+function exportCSV() {
+    if (!lastResults.length) {
+        alert('Tidak ada data hasil query untuk diekspor.');
+        return;
+    }
+    var csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += lastColumns.map(function(c) { return '"' + c.replace(/"/g, '""') + '"'; }).join(",") + "\r\n";
+    lastResults.forEach(function(row) {
+        var rowStr = lastColumns.map(function(c) {
+            var val = row[c] === null || row[c] === undefined ? '' : String(row[c]);
+            return '"' + val.replace(/"/g, '""') + '"';
+        }).join(",");
+        csvContent += rowStr + "\r\n";
+    });
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "query_result_" + Date.now() + ".csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportJSON() {
+    if (!lastResults.length) {
+        alert('Tidak ada data hasil query untuk diekspor.');
+        return;
+    }
+    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastResults, null, 2));
+    var link = document.createElement("a");
+    link.setAttribute("href", dataStr);
+    link.setAttribute("download", "query_result_" + Date.now() + ".json");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

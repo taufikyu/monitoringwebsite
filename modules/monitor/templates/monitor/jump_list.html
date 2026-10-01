@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Jump Host Routing - Server Monitor{% endblock %}
+
+{% block content %}
+<style>
+    .toolbar-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+        background: #ffffff;
+        padding: 14px 18px;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+    }
+    .toolbar-left, .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .search-box {
+        position: relative;
+        width: 300px;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 8px 12px 8px 36px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border-subtle);
+        background: #f8fafc;
+        font-size: 13px;
+        outline: none;
+    }
+    .search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    .btn-action {
+        padding: 8px 14px;
+        border-radius: var(--radius-pill);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+    .btn-primary-custom { background: var(--primary); color: #fff; }
+    .btn-primary-custom:hover { background: #e04812; color: #fff; }
+    .btn-default-custom { background: #f1f5f9; color: var(--text-main); border-color: var(--border-subtle); }
+    .btn-default-custom:hover { background: #e2e8f0; }
+
+    .table-container {
+        background: #ffffff;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        text-align: left;
+    }
+    .custom-table th {
+        background: #f8fafc;
+        padding: 12px 16px;
+        font-weight: 700;
+        color: #475569;
+        border-bottom: 1px solid var(--border-subtle);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .custom-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: middle;
+    }
+    .custom-table tr:hover td {
+        background: #fcfdfe;
+    }
+    .badge-order {
+        background: #f1f5f9;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        border: 1px solid #e2e8f0;
+    }
+    .hop-arrow {
+        color: var(--primary);
+        font-weight: 700;
+        margin: 0 8px;
+        display: inline-flex;
+        align-items: center;
+    }
+</style>
+
+<div class="content-header" style="margin-bottom: 20px;">
+    <h1 style="font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+        <i class="ph-duotone ph-git-merge" style="color: var(--primary);"></i> Jump Host Routing
+    </h1>
+    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+        Pengaturan rute perantara proxy SSH multi-hop untuk mengakses server internal/private di balik bastion/gateway.
+    </p>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="padding: 12px 16px; border-radius: var(--radius-pill); margin-bottom: 16px; font-size: 13px; font-weight: 600; background: {{ '#ecfdf5' if category == 'success' else '#fef2f2' }}; color: {{ '#065f46' if category == 'success' else '#991b1b' }}; border: 1px solid {{ '#a7f3d0' if category == 'success' else '#fecaca' }};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Toolbar -->
+<div class="toolbar-container">
+    <div class="toolbar-left">
+        <div class="search-box">
+            <i class="ph ph-magnifying-glass"></i>
+            <input type="text" id="jumpSearch" placeholder="Cari rute jump host..." onkeyup="filterJumps()">
+        </div>
+        <span style="font-size: 13px; color: var(--text-muted);">
+            Total: <strong id="visibleJumpCount">{{ jumps|length }}</strong> Rute
+        </span>
+    </div>
+    <div class="toolbar-right">
+        <a href="{{ url_for('monitor.jump_add') }}" class="btn-action btn-primary-custom">
+            <i class="ph ph-plus"></i> Tambah Rute Jump
+        </a>
+    </div>
+</div>
+
+<!-- Jump Table -->
+<div class="table-container">
+    <table class="custom-table" id="jumpTable">
+        <thead>
+            <tr>
+                <th style="width: 70px;">Urutan</th>
+                <th>Server Target (Tujuan)</th>
+                <th>Jump Server (Perantara)</th>
+                <th>Alur Koneksi SSH</th>
+                <th style="width: 100px; text-align: center;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for j in jumps %}
+            <tr class="jump-row" data-search="{{ j.server.nama if j.server else '' }} {{ j.server.host if j.server else '' }} {{ j.jump_server.nama if j.jump_server else '' }} {{ j.jump_server.host if j.jump_server else '' }}">
+                <td>
+                    <span class="badge-order">Hop #{{ j.urutan }}</span>
+                </td>
+                <td>
+                    <div style="font-weight: 700; font-size: 14px; color: #1e293b;">
+                        {{ j.server.nama if j.server else 'Server #' ~ j.server_id }}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">
+                        {{ j.server.host if j.server else '-' }}:{{ j.server.ssh_port if j.server else 22 }}
+                    </div>
+                </td>
+                <td>
+                    <div style="font-weight: 700; font-size: 14px; color: #0369a1;">
+                        {{ j.jump_server.nama if j.jump_server else 'Server #' ~ j.jump_server_id }}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">
+                        {{ j.jump_server.host if j.jump_server else '-' }}:{{ j.jump_server.ssh_port if j.jump_server else 22 }}
+                    </div>
+                </td>
+                <td>
+                    <div style="display: flex; align-items: center; font-size: 12.5px; font-weight: 600;">
+                        <span style="background: #eff6ff; color: #1d4ed8; padding: 4px 8px; border-radius: 6px;">
+                            {{ j.jump_server.nama if j.jump_server else 'Jump Host' }}
+                        </span>
+                        <span class="hop-arrow"><i class="ph ph-arrow-right"></i></span>
+                        <span style="background: #ecfdf5; color: #047857; padding: 4px 8px; border-radius: 6px;">
+                            {{ j.server.nama if j.server else 'Target Host' }}
+                        </span>
+                    </div>
+                </td>
+                <td style="text-align: center;">
+                    <form action="{{ url_for('monitor.jump_delete', id=j.id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus rute jump ini?');" style="margin: 0; display: inline;">
+                        <button type="submit" class="btn-action btn-default-custom" style="padding: 4px 8px; font-size: 11px; color: #dc2626;" title="Hapus Rute">
+                            <i class="ph ph-trash"></i> Hapus
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                    <i class="ph ph-git-merge" style="font-size: 32px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                    Belum ada konfigurasi rute jump host proxy. Seluruh server terhubung secara direct.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function filterJumps() {
+    var q = (document.getElementById('jumpSearch').value || '').toLowerCase().trim();
+    var rows = document.querySelectorAll('.jump-row');
+    var visible = 0;
+    rows.forEach(function(row) {
+        var str = (row.getAttribute('data-search') || '').toLowerCase();
+        if (!q || str.indexOf(q) > -1) {
+            row.style.display = '';
+            visible++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    document.getElementById('visibleJumpCount').innerText = visible;
+}
+</script>
+{% endblock %}

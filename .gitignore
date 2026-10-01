@@ -1,0 +1,85 @@
+# Environment & Local Configuration
+.env
+.env.*
+!.env.example
+*.env
+*.ini
+*.cfg
+config.local.py
+
+# Database & Instances
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Uploads, Media & User Files
+/media/
+/uploads/
+/storage/
+static/uploads/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.mp4
+*.webm
+*.mov
+
+# Reports, Exports, Dumps & Backups
+reports/
+laporan/
+exports/
+backups/
+dumps/
+*.dump
+*.sql
+*.sql.gz
+*.tar
+*.tar.gz
+*.zip
+*.7z
+*.rar
+*.pdf
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.csv
+*.odt
+
+# Logs & Temporary Files
+logs/
+*.log
+*.tmp
+*.temp
+tmp/
+temp/
+*.stackdump
+*.dmp
+
+# IDE & Operating System
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

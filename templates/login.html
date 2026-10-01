@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Tool Digital</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #d8e0ea 100%);
+            color: #18181B;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Glow Blobs */
+        .ambient-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.35;
+        }
+        .blob-red {
+            width: 450px;
+            height: 450px;
+            background: #fca5a5;
+            top: 10%;
+            left: 20%;
+        }
+        .blob-blue {
+            width: 400px;
+            height: 400px;
+            background: #93c5fd;
+            bottom: 10%;
+            right: 20%;
+        }
+
+        /* Auth Container Card */
+        .auth-card {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 960px;
+            min-height: 580px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(30px) saturate(190%);
+            -webkit-backdrop-filter: blur(30px) saturate(190%);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.08);
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            overflow: hidden;
+        }
+
+        /* Left Side: Form */
+        .auth-form-side {
+            padding: 48px 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+            text-decoration: none;
+            color: #18181B;
+        }
+
+        .auth-logo-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: #FFFFFF;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .auth-logo-text {
+            font-size: 17px;
+            font-weight: 800;
+            color: #18181B;
+            letter-spacing: -0.3px;
+        }
+
+        .auth-header {
+            margin-bottom: 24px;
+        }
+
+        .auth-header h2 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #18181B;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .auth-header p {
+            font-size: 13.5px;
+            color: #71717A;
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #E4E4E7;
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #18181B;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        .btn-google:hover {
+            background: #F4F4F5;
+            border-color: #D4D4D8;
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0 16px 0;
+            color: #A1A1AA;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #E4E4E7;
+        }
+        .divider:not(:empty)::before { margin-right: .8em; }
+        .divider:not(:empty)::after { margin-left: .8em; }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #18181B;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #E4E4E7;
+            background: #FAFAFA;
+            font-size: 14px;
+            font-family: inherit;
+            color: #18181B;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #18181B;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.08);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 13px;
+            border-radius: 12px;
+            border: none;
+            background: #18181B;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 6px;
+            box-shadow: 0 4px 14px rgba(24, 24, 27, 0.15);
+        }
+
+        .btn-submit:hover {
+            background: #27272A;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(24, 24, 27, 0.2);
+        }
+
+        /* Right Side: Visual Showcase Banner */
+        .auth-banner-side {
+            background: linear-gradient(135deg, #18181B 0%, #27272A 100%);
+            padding: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: #FFFFFF;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .banner-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(244, 63, 94, 0.25) 0%, transparent 70%);
+            top: -50px;
+            right: -50px;
+            pointer-events: none;
+        }
+
+        .banner-header {
+            position: relative;
+            z-index: 2;
+        }
+
+        .banner-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .banner-header h3 {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.3;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+
+        .banner-header p {
+            font-size: 13.5px;
+            color: #A1A1AA;
+            line-height: 1.5;
+        }
+
+        /* Mini Preview Widgets in Banner */
+        .preview-widget {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 18px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .widget-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .widget-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #D4D4D8;
+        }
+
+        .widget-stat {
+            font-size: 20px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        .widget-trend {
+            font-size: 11px;
+            font-weight: 700;
+            color: #34D399;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .mini-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 44px;
+            padding-top: 6px;
+        }
+
+        .mini-bar {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .mini-bar.active {
+            background: #F43F5E;
+        }
+
+        .banner-footer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar-group {
+            display: flex;
+            margin-left: 8px;
+        }
+
+        .avatar-group img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #18181B;
+            margin-left: -8px;
+            object-fit: cover;
+        }
+
+        .banner-footer span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #A1A1AA;
+        }
+
+        /* Responsive */
+        @media (max-width: 820px) {
+            .auth-card {
+                grid-template-columns: 1fr;
+                max-width: 460px;
+            }
+            .auth-banner-side {
+                display: none;
+            }
+            .auth-form-side {
+                padding: 36px 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ambient-blob blob-red"></div>
+<div class="ambient-blob blob-blue"></div>
+
+<div class="auth-card">
+    <!-- Form Side -->
+    <div class="auth-form-side">
+        <div>
+            <a href="/" class="auth-logo">
+                <div class="auth-logo-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                </div>
+                <span class="auth-logo-text">Tool Digital</span>
+            </a>
+
+            <div class="auth-header">
+                <h2>Welcome Back</h2>
+                <p>Please enter your details to sign in to your dashboard</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div style="padding: 12px 14px; margin-bottom: 16px; border-radius: 10px; font-size: 13px; font-weight: 600; {% if category == 'success' %}background-color: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;{% elif category == 'warning' %}background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;{% else %}background-color: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;{% endif %}">
+                      {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-input" placeholder="name@company.com" required autofocus>
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-input" placeholder="••••••••" required>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: #71717A;">
+                        <input type="checkbox" name="remember" style="accent-color: #18181B;"> Remember me
+                    </label>
+                    <a href="#" style="font-size: 13px; color: #18181B; text-decoration: none; font-weight: 700;">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn-submit">Sign In</button>
+            </form>
+
+            <div class="divider">or continue with</div>
+
+            <a href="{{ url_for('google_login') }}" class="btn-google">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                Sign in with Google
+            </a>
+        </div>
+
+        <div style="text-align: center; margin-top: 24px; font-size: 13px;">
+            <span style="color: #71717A;">Don't have an account?</span>
+            <a href="{{ url_for('register') }}" style="color: #18181B; font-weight: 700; text-decoration: none; margin-left: 4px;">Sign up here</a>
+        </div>
+    </div>
+
+    <!-- Showcase Banner Side -->
+    <div class="auth-banner-side">
+        <div class="banner-glow"></div>
+        
+        <div class="banner-header">
+            <div class="banner-badge">
+                <i class="ph ph-sparkle"></i> Pro Performance
+            </div>
+            <h3>Unified Estate & Workflow Control Center</h3>
+            <p>Real-time analytics, dynamic permission management, and multi-user modular dashboards in one place.</p>
+
+            <!-- Preview Card -->
+            <div class="preview-widget">
+                <div class="widget-row">
+                    <span class="widget-title">TOTAL LEASED RSF</span>
+                    <span class="widget-trend"><i class="ph ph-trend-up"></i> +14.2%</span>
+                </div>
+                <div class="widget-stat">597.146 m²</div>
+                <div class="mini-bars">
+                    <div class="mini-bar" style="height: 40%;"></div>
+                    <div class="mini-bar" style="height: 65%;"></div>
+                    <div class="mini-bar" style="height: 45%;"></div>
+                    <div class="mini-bar active" style="height: 95%;"></div>
+                    <div class="mini-bar" style="height: 70%;"></div>
+                    <div class="mini-bar" style="height: 85%;"></div>
+                    <div class="mini-bar active" style="height: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="banner-footer">
+            <div class="avatar-group">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" alt="User">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" alt="User">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80" alt="User">
+            </div>
+            <span>Trusted by 2,400+ teams</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

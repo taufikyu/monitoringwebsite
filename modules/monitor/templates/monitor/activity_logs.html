@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs - Server Monitor{% endblock %}
+
+{% block content %}
+<style>
+    .toolbar-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+        background: #ffffff;
+        padding: 14px 18px;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+    }
+    .toolbar-left, .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .search-box {
+        position: relative;
+        width: 280px;
+    }
+    .search-box input, .filter-select {
+        padding: 8px 12px 8px 36px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border-subtle);
+        background: #f8fafc;
+        font-size: 13px;
+        outline: none;
+    }
+    .filter-select {
+        padding-left: 12px;
+        cursor: pointer;
+    }
+    .search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    .table-container {
+        background: #ffffff;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        text-align: left;
+    }
+    .custom-table th {
+        background: #f8fafc;
+        padding: 12px 16px;
+        font-weight: 700;
+        color: #475569;
+        border-bottom: 1px solid var(--border-subtle);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .custom-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        vertical-align: middle;
+    }
+    .custom-table tr:hover td {
+        background: #fcfdfe;
+    }
+    .badge-status {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .badge-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-failed { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-action {
+        background: #f1f5f9;
+        color: #334155;
+        font-family: monospace;
+        font-size: 11.5px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+</style>
+
+<div class="content-header" style="margin-bottom: 20px;">
+    <h1 style="font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+        <i class="ph-duotone ph-clock-counter-clockwise" style="color: var(--primary);"></i> Audit Activity Logs
+    </h1>
+    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+        Catatan riwayat aktivitas operasional seluruh pengguna: penambahan server, restart service, dan modifikasi data.
+    </p>
+</div>
+
+<!-- Toolbar & Filter -->
+<div class="toolbar-container">
+    <div class="toolbar-left">
+        <div class="search-box">
+            <i class="ph ph-magnifying-glass"></i>
+            <input type="text" id="logSearch" placeholder="Cari deskripsi, user, IP..." onkeyup="filterLogs()">
+        </div>
+        <select id="statusFilter" class="filter-select" onchange="filterLogs()">
+            <option value="all">Semua Status</option>
+            <option value="SUCCESS">Success</option>
+            <option value="FAILED">Failed / Error</option>
+        </select>
+        <span style="font-size: 13px; color: var(--text-muted);">
+            Menampilkan <strong id="visibleLogCount">{{ logs|length }}</strong> Log Terbaru
+        </span>
+    </div>
+</div>
+
+<!-- Table Container -->
+<div class="table-container">
+    <table class="custom-table" id="logTable">
+        <thead>
+            <tr>
+                <th style="width: 150px;">Waktu</th>
+                <th style="width: 140px;">Pengguna</th>
+                <th style="width: 130px;">Tipe Aksi</th>
+                <th>Deskripsi Aktivitas</th>
+                <th style="width: 100px;">Status</th>
+                <th style="width: 110px;">IP Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in logs %}
+            <tr class="log-row" data-search="{{ l.description }} {{ l.user_name }} {{ l.user_email }} {{ l.action_type }} {{ l.ip_address }}" data-status="{{ l.status }}">
+                <td style="font-size: 12px; color: var(--text-muted); font-family: monospace;">
+                    {{ l.created_at.strftime('%Y-%m-%d %H:%M:%S') if l.created_at else '-' }}
+                </td>
+                <td>
+                    <div style="font-weight: 700; color: #1e293b;">{{ l.user_name or 'System' }}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">{{ l.user_email or '-' }}</div>
+                </td>
+                <td>
+                    <span class="badge-action">{{ l.action_type }}</span>
+                </td>
+                <td>
+                    <div style="color: #0f172a; font-weight: 500;">
+                        {{ l.description }}
+                    </div>
+                </td>
+                <td>
+                    <span class="badge-status {{ 'badge-success' if l.status == 'SUCCESS' else 'badge-failed' }}">
+                        <i class="ph {{ 'ph-check-circle' if l.status == 'SUCCESS' else 'ph-x-circle' }}"></i>
+                        {{ l.status }}
+                    </span>
+                </td>
+                <td style="font-size: 12px; color: var(--text-muted); font-family: monospace;">
+                    {{ l.ip_address or '-' }}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                    <i class="ph ph-clock-counter-clockwise" style="font-size: 32px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                    Belum ada catatan aktivitas di log sistem.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function filterLogs() {
+    var q = (document.getElementById('logSearch').value || '').toLowerCase().trim();
+    var status = document.getElementById('statusFilter').value;
+    var rows = document.querySelectorAll('.log-row');
+    var visible = 0;
+
+    rows.forEach(function(row) {
+        var str = (row.getAttribute('data-search') || '').toLowerCase();
+        var rowStatus = row.getAttribute('data-status') || '';
+
+        var matchesQuery = !q || str.indexOf(q) > -1;
+        var matchesStatus = (status === 'all') || (status === 'SUCCESS' && rowStatus === 'SUCCESS') || (status === 'FAILED' && rowStatus !== 'SUCCESS');
+
+        if (matchesQuery && matchesStatus) {
+            row.style.display = '';
+            visible++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    document.getElementById('visibleLogCount').innerText = visible;
+}
+</script>
+{% endblock %}

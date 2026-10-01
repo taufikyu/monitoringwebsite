@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block page_title %}{% if role %}Edit Role: {{ role.name }}{% else %}Tambah Role Group{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-label {
+        display: block;
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text-main);
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid #E4E4E7;
+        background: #FAFAFA;
+        font-size: 14px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #18181B;
+        background: #FFFFFF;
+        box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.08);
+    }
+
+    .perm-category-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-subtle);
+        border-radius: 14px;
+        margin-bottom: 18px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    .perm-category-header {
+        background: #F8FAFC;
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .perm-category-title {
+        font-weight: 700;
+        font-size: 13.5px;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .perm-category-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-quick-select {
+        background: transparent;
+        border: none;
+        color: #2563EB;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .btn-quick-select:hover {
+        background: #EFF6FF;
+    }
+
+    .perm-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+        padding: 16px 18px;
+    }
+
+    .perm-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 14px;
+        background: #FAFAFA;
+        border-radius: 10px;
+        border: 1px solid #E4E4E7;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .perm-item:hover {
+        background: #F4F4F5;
+        border-color: #D4D4D8;
+    }
+
+    .perm-item input[type="checkbox"] {
+        margin-top: 3px;
+        width: 16px;
+        height: 16px;
+        accent-color: #18181B;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 960px; margin: 0 auto; width: 100%;">
+    <div style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <a href="{{ url_for('admin_roles') }}" style="color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                <i class="ph ph-arrow-left"></i> Kembali ke Daftar Role
+            </a>
+        </div>
+        <h3 style="margin: 0; color: var(--text-main); font-weight: 800; font-size: 1.4rem; letter-spacing: -0.3px;">
+            {% if role %}
+                Edit Role Group: {{ role.name }}
+            {% else %}
+                Buat Role Group Baru
+            {% endif %}
+        </h3>
+        <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 0.88rem;">
+            Konfigurasi nama grup dan centang hak akses (permissions) menu dan fitur yang diizinkan untuk anggota grup ini.
+        </p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 500; {% if category == 'success' %}background-color: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;{% else %}background-color: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;{% endif %}">
+              {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+            <div>
+                <label class="form-label">Nama Role Group</label>
+                <input type="text" name="name" class="form-control" value="{{ role.name if role else '' }}" placeholder="Contoh: Pro Member, VIP User" required {% if role and role.is_system %}readonly style="background: #F4F4F5; cursor: not-allowed;" title="Nama role bawaan sistem tidak dapat diubah"{% endif %}>
+                {% if role and role.is_system %}
+                    <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block; font-weight: 600;">
+                        <i class="ph ph-lock-key"></i> System Role: Nama role inti dilindungi sistem.
+                    </small>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="form-label">Deskripsi / Peruntukan Role</label>
+                <input type="text" name="description" class="form-control" value="{{ role.description if role else '' }}" placeholder="Keterangan singkat fungsi role ini...">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; margin-top: 32px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);">
+            <div>
+                <h4 style="margin: 0; font-size: 1.1rem; color: var(--text-main); font-weight: 800;">Pengaturan Hak Akses (Permissions)</h4>
+                <p style="margin: 2px 0 0 0; color: var(--text-muted); font-size: 12px;">Pilih izin yang diberikan kepada pengguna dengan role ini.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-secondary" style="padding: 6px 14px; font-size: 12px;" onclick="toggleAllGlobal(true)">
+                    <i class="ph ph-check-square"></i> Pilih Semua
+                </button>
+                <button type="button" class="btn-secondary" style="padding: 6px 14px; font-size: 12px;" onclick="toggleAllGlobal(false)">
+                    <i class="ph ph-square"></i> Batal Semua
+                </button>
+            </div>
+        </div>
+
+        {% if role and role.name == 'Administrator' %}
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+                <i class="ph ph-shield-check" style="font-size: 26px; color: #16A34A;"></i>
+                <div>
+                    <h5 style="margin: 0 0 2px 0; color: #166534; font-weight: 800; font-size: 13.5px;">Hak Akses Administrator Penuh (Super Admin)</h5>
+                    <p style="margin: 0; color: #15803D; font-size: 12px;">Role Administrator secara otomatis memiliki izin ke seluruh menu, fitur, dan manajemen sistem tanpa batasan.</p>
+                </div>
+            </div>
+        {% endif %}
+
+        {% for category, perms in grouped_perms.items() %}
+            <div class="perm-category-card" data-category="{{ loop.index }}">
+                <div class="perm-category-header">
+                    <div class="perm-category-title">
+                        <i class="ph ph-folder" style="color: var(--text-main);"></i>
+                        {{ category }}
+                        <span style="background: #E4E4E7; color: #3F3F46; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 700;">{{ perms|length }}</span>
+                    </div>
+                    <div class="perm-category-actions">
+                        <button type="button" class="btn-quick-select" onclick="toggleCategory({{ loop.index }}, true)">Pilih Semua</button>
+                        <span style="color: #CBD5E1;">|</span>
+                        <button type="button" class="btn-quick-select" style="color: #64748B;" onclick="toggleCategory({{ loop.index }}, false)">Batal</button>
+                    </div>
+                </div>
+                <div class="perm-grid">
+                    {% for p in perms %}
+                        <label class="perm-item" for="perm_{{ p.id }}">
+                            <input type="checkbox" name="permission_ids" value="{{ p.id }}" id="perm_{{ p.id }}" class="cat-checkbox-{{ loop.parent.loop.index }}" {% if p.id in selected_perm_ids or (role and role.name == 'Administrator') %}checked{% endif %}>
+                            <div>
+                                <div style="font-weight: 700; font-size: 13px; color: var(--text-main);">{{ p.name }}</div>
+                                <code style="font-size: 11px; color: #2563EB; background: #EFF6FF; padding: 1px 5px; border-radius: 4px; display: inline-block; margin-top: 2px; font-weight: 600;">{{ p.code }}</code>
+                                {% if p.description %}
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.3;">{{ p.description }}</div>
+                                {% endif %}
+                            </div>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding-top: 24px; border-top: 1px solid var(--border-subtle); margin-top: 20px;">
+            <a href="{{ url_for('admin_roles') }}" class="btn-secondary">
+                Batal
+            </a>
+            <button type="submit" class="btn-primary">
+                <i class="ph ph-floppy-disk" style="font-size: 18px;"></i>
+                Simpan Role Group
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleCategory(catIndex, isChecked) {
+    const checkboxes = document.querySelectorAll('.cat-checkbox-' + catIndex);
+    checkboxes.forEach(cb => cb.checked = isChecked);
+}
+
+function toggleAllGlobal(isChecked) {
+    const allCheckboxes = document.querySelectorAll('input[name="permission_ids"]');
+    allCheckboxes.forEach(cb => cb.checked = isChecked);
+}
+</script>
+{% endblock %}

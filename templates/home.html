@@ -1,0 +1,954 @@
+{% extends "base.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 1. TOP METRICS ROW - 5 COLUMNS HORIZONTAL */
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 14px;
+        margin-bottom: 16px;
+        width: 100%;
+    }
+
+    .metric-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        padding: 16px 18px;
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 110px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px -2px rgba(0, 0, 0, 0.04);
+    }
+
+    .metric-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        letter-spacing: -0.1px;
+    }
+
+    .metric-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--text-main);
+        letter-spacing: -0.8px;
+        margin: 4px 0;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .metric-value .unit {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .metric-trend {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .trend-up-red {
+        color: #F43F5E;
+    }
+
+    .trend-up-green {
+        color: #10B981;
+    }
+
+    .trend-subtext {
+        font-weight: 500;
+        color: var(--text-light);
+        margin-left: 2px;
+    }
+
+    /* 2. MIDDLE ROW GRID (Expense & Map) */
+    .middle-grid {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 16px;
+        margin-bottom: 16px;
+        width: 100%;
+    }
+
+    .chart-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        padding: 20px 24px;
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chart-header {
+        margin-bottom: 14px;
+    }
+
+    .chart-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--text-main);
+        letter-spacing: -0.3px;
+        margin-bottom: 2px;
+    }
+
+    .chart-subtitle {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .chart-body {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 18px;
+        align-items: center;
+        flex-grow: 1;
+    }
+
+    .chart-stats-left {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .stat-row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-row-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 1px;
+    }
+
+    .stat-row-val {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .stat-row-trend {
+        font-size: 10.5px;
+        font-weight: 700;
+    }
+
+    /* Vertical Rounded Pill Bars */
+    .bars-container {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        height: 160px;
+        padding-top: 8px;
+        position: relative;
+    }
+
+    .y-axis-labels {
+        position: absolute;
+        left: -26px;
+        top: 0;
+        bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        font-size: 9.5px;
+        font-weight: 600;
+        color: var(--text-light);
+        text-align: right;
+    }
+
+    .bar-column {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+    }
+
+    .bar-track {
+        width: 12px;
+        height: 125px;
+        background: #F4F4F5;
+        border-radius: 20px;
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        width: 100%;
+        background: #EF4444;
+        border-radius: 20px;
+        transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .bar-label {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--text-light);
+    }
+
+    /* Map Card Component */
+    .map-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        padding: 20px 22px;
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .map-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .map-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--text-main);
+    }
+
+    .map-legend {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .legend-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+    }
+
+    .map-viewport {
+        position: relative;
+        flex: 1;
+        min-height: 180px;
+        background: #F8FAFC;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .map-svg-bg {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .map-search-bar {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 20px;
+        padding: 5px 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        z-index: 5;
+    }
+
+    .map-search-bar input {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 11.5px;
+        font-family: inherit;
+        color: var(--text-main);
+        width: 110px;
+    }
+
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 20px;
+        padding: 2px 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        z-index: 5;
+    }
+
+    .map-controls button {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 3px 6px;
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text-main);
+    }
+
+    .floating-property-card {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 12px;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+        z-index: 10;
+    }
+
+    .property-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: #E2E8F0;
+    }
+
+    .property-info {
+        flex: 1;
+    }
+
+    .property-title-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .property-title {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--text-main);
+    }
+
+    .property-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--accent-red);
+        border-radius: 50%;
+    }
+
+    .property-sub {
+        font-size: 10.5px;
+        color: var(--text-muted);
+        margin: 1px 0;
+    }
+
+    .property-specs {
+        font-size: 10px;
+        color: var(--text-light);
+        display: flex;
+        gap: 6px;
+    }
+
+    .map-node {
+        position: absolute;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 4;
+    }
+
+    .node-blue {
+        border: 2.5px solid #3B82F6;
+        background: #FFFFFF;
+    }
+
+    .node-red {
+        border: 2.5px solid #EF4444;
+        background: #FFFFFF;
+    }
+
+    .node-red-solid {
+        background: #EF4444;
+        border: 2px solid #FFFFFF;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+    }
+
+    /* 3. BOTTOM ROW GRID (3 Cards) */
+    .bottom-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        width: 100%;
+    }
+
+    .bottom-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-card);
+        padding: 20px 22px;
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .bottom-card-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--text-main);
+        letter-spacing: -0.3px;
+        margin-bottom: 14px;
+    }
+
+    .item-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .critical-item {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    .critical-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .critical-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .critical-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .critical-badge {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--text-light);
+        background: #F4F4F5;
+        padding: 1px 7px;
+        border-radius: 12px;
+    }
+
+    .critical-desc {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        line-height: 1.35;
+    }
+
+    .site-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    .site-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .site-item-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .site-thumb {
+        width: 34px;
+        height: 34px;
+        border-radius: 7px;
+        object-fit: cover;
+        background: #E2E8F0;
+    }
+
+    .site-name {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .site-address {
+        font-size: 10.5px;
+        color: var(--text-light);
+    }
+
+    .site-price {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text-main);
+    }
+
+    .financial-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    .financial-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .financial-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .financial-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: #F4F4F5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        color: var(--text-main);
+    }
+
+    .financial-title {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .financial-date {
+        font-size: 10.5px;
+        color: var(--text-light);
+    }
+
+    .financial-amount {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--text-main);
+    }
+
+    /* Small Screen Responsive Only */
+    @media (max-width: 900px) {
+        .metric-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+        .middle-grid {
+            grid-template-columns: 1fr;
+        }
+        .bottom-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- 1. TOP METRICS ROW (5 Cards Horizontal) -->
+<section class="metric-grid">
+    <!-- Card 1 -->
+    <div class="metric-card">
+        <span class="metric-label">Total Sites</span>
+        <div class="metric-value">200</div>
+        <div class="metric-trend trend-up-red">
+            <i class="ph ph-trend-up"></i> 1.2%
+            <span class="trend-subtext">This Month</span>
+        </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="metric-card">
+        <span class="metric-label">Annual Rent Expense</span>
+        <div class="metric-value">$ 1.2 <span class="unit">M</span></div>
+        <div class="metric-trend trend-up-red">
+            <i class="ph ph-trend-up"></i> 1.2%
+            <span class="trend-subtext">This Month</span>
+        </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="metric-card">
+        <span class="metric-label">Total RSF Leased</span>
+        <div class="metric-value">597.146 <span class="unit">m²</span></div>
+        <div class="metric-trend trend-up-green">
+            <i class="ph ph-trend-up"></i> 1.2%
+            <span class="trend-subtext">This Month</span>
+        </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="metric-card">
+        <span class="metric-label">Remaining Space</span>
+        <div class="metric-value">52.232 <span class="unit">m²</span></div>
+        <div class="metric-trend trend-up-red">
+            <i class="ph ph-trend-up"></i> 1.2%
+            <span class="trend-subtext">This Month</span>
+        </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="metric-card">
+        <span class="metric-label">Expiring Leases</span>
+        <div class="metric-value">144</div>
+        <div class="metric-trend trend-up-red">
+            <i class="ph ph-trend-up"></i> 1.2%
+            <span class="trend-subtext">This Month</span>
+        </div>
+    </div>
+</section>
+
+<!-- 2. MIDDLE ROW (Total Expense Chart & Estate Map) -->
+<section class="middle-grid">
+    <!-- Total Expense Analytics Module -->
+    <div class="chart-card">
+        <div class="chart-header">
+            <h3 class="chart-title">Total Expense</h3>
+            <p class="chart-subtitle">
+                <i class="ph ph-info" style="color: #F59E0B; font-size: 13px;"></i>
+                Expenses have remained at the same rate for the last year.
+            </p>
+        </div>
+
+        <div class="chart-body">
+            <!-- Left Stats Panel -->
+            <div class="chart-stats-left">
+                <div class="stat-row">
+                    <span class="stat-row-label">Last 5 Year</span>
+                    <div class="stat-row-val">
+                        1.2 M $ 
+                        <span class="stat-row-trend" style="color: #10B981;"><i class="ph ph-trend-up"></i> 5.2%</span>
+                    </div>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-row-label">Last 10 Year</span>
+                    <div class="stat-row-val">
+                        2.3 M $ 
+                        <span class="stat-row-trend" style="color: #EF4444;"><i class="ph ph-trend-down"></i> 1.2%</span>
+                    </div>
+                </div>
+
+                <div class="stat-row">
+                    <span class="stat-row-label">All Time</span>
+                    <div class="stat-row-val">
+                        11.3 M $ 
+                        <span class="stat-row-trend" style="color: #EF4444;"><i class="ph ph-trend-up"></i> 6.8%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Vertical Bar Chart -->
+            <div class="bars-container">
+                <div class="y-axis-labels">
+                    <span>1.2</span>
+                    <span>1.1</span>
+                    <span>800</span>
+                    <span>500</span>
+                    <span>0</span>
+                </div>
+
+                <!-- Jan Bar -->
+                <div class="bar-column">
+                    <div class="bar-track" title="Jan: $780k">
+                        <div class="bar-fill" style="height: 55%;"></div>
+                    </div>
+                    <span class="bar-label">Jan</span>
+                </div>
+
+                <!-- Feb Bar -->
+                <div class="bar-column">
+                    <div class="bar-track" title="Feb: $1.2M">
+                        <div class="bar-fill" style="height: 95%;"></div>
+                    </div>
+                    <span class="bar-label">Feb</span>
+                </div>
+
+                <!-- Mar Bar -->
+                <div class="bar-column">
+                    <div class="bar-track" title="Mar: $420k">
+                        <div class="bar-fill" style="height: 35%;"></div>
+                    </div>
+                    <span class="bar-label">Mar</span>
+                </div>
+
+                <!-- Apr Bar -->
+                <div class="bar-column">
+                    <div class="bar-track" title="Apr: $980k">
+                        <div class="bar-fill" style="height: 80%;"></div>
+                    </div>
+                    <span class="bar-label">Apr</span>
+                </div>
+
+                <!-- May Bar -->
+                <div class="bar-column">
+                    <div class="bar-track" title="May: $850k">
+                        <div class="bar-fill" style="height: 70%;"></div>
+                    </div>
+                    <span class="bar-label">May</span>
+                </div>
+
+                <!-- Jun Bar -->
+                <div class="bar-column">
+                    <div class="bar-track" title="Jun: $920k">
+                        <div class="bar-fill" style="height: 75%;"></div>
+                    </div>
+                    <span class="bar-label">Jun</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estate Map Interactive Widget -->
+    <div class="map-card">
+        <div class="map-header">
+            <h3 class="map-title">Estate Map</h3>
+            <div class="map-legend">
+                <span><span class="legend-dot" style="background: #3B82F6;"></span>Leased</span>
+                <span><span class="legend-dot" style="background: #EF4444;"></span>Owned</span>
+            </div>
+        </div>
+
+        <div class="map-viewport">
+            <!-- Search Address Floating Pill -->
+            <div class="map-search-bar">
+                <i class="ph ph-magnifying-glass"></i>
+                <input type="text" placeholder="Search Address..." value="Armory Road">
+            </div>
+
+            <!-- Zoom Controls -->
+            <div class="map-controls">
+                <button type="button" title="Zoom In">+</button>
+                <button type="button" title="Zoom Out">-</button>
+            </div>
+
+            <!-- Stylized Vector Map Canvas -->
+            <svg class="map-svg-bg" viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="500" height="300" fill="#F8FAFC"/>
+                
+                <path d="M-20,80 Q150,120 300,70 T520,110" stroke="#E2E8F0" stroke-width="18" stroke-linecap="round"/>
+                <path d="M120,-20 L220,320" stroke="#E2E8F0" stroke-width="14" stroke-linecap="round"/>
+                <path d="M360,-20 L280,320" stroke="#E2E8F0" stroke-width="16" stroke-linecap="round"/>
+                <path d="M-20,220 C180,180 320,260 520,200" stroke="#E2E8F0" stroke-width="12" stroke-linecap="round"/>
+                
+                <path d="M-20,80 Q150,120 300,70 T520,110" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+                <path d="M360,-20 L280,320" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+
+                <text x="390" y="140" fill="#94A3B8" font-size="10" font-weight="600" transform="rotate(35 390,140)">José y</text>
+                <text x="440" y="180" fill="#94A3B8" font-size="10" font-weight="600" transform="rotate(35 440,180)">Juan</text>
+            </svg>
+
+            <!-- Map Pinpoint Nodes -->
+            <div class="map-node node-blue" style="top: 110px; left: 55px;" title="Leased Property"></div>
+            <div class="map-node node-blue" style="top: 130px; left: 130px;" title="Leased Property"></div>
+            <div class="map-node node-blue" style="top: 120px; left: 310px;" title="Leased Property"></div>
+            <div class="map-node node-red" style="top: 105px; left: 360px;" title="Owned Property"></div>
+            <div class="map-node node-red-solid" style="top: 120px; left: 415px;" title="Active: Modern Villa"></div>
+
+            <!-- Floating Mini Property Card -->
+            <div class="floating-property-card">
+                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=120&auto=format&fit=crop&q=80" alt="Modern Villa" class="property-thumb">
+                <div class="property-info">
+                    <div class="property-title-row">
+                        <span class="property-title">Modern Villa</span>
+                        <span class="property-dot"></span>
+                    </div>
+                    <div class="property-sub">2503 Armory Road, 28358</div>
+                    <div class="property-specs">
+                        <span><i class="ph ph-bed"></i> 3 Bed</span>
+                        <span><i class="ph ph-bathtub"></i> 1 Bath</span>
+                    </div>
+                </div>
+                <button type="button" style="background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 15px;">&times;</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. BOTTOM ROW (3 Cards Horizontal) -->
+<section class="bottom-grid">
+    <!-- Card 1: Critical Dates Timeline -->
+    <div class="bottom-card">
+        <h4 class="bottom-card-title">Critical Dates</h4>
+        <div class="item-list">
+            <div class="critical-item">
+                <div class="critical-top">
+                    <span class="critical-name">Contract Review</span>
+                    <span class="critical-badge">Feb 19</span>
+                </div>
+                <p class="critical-desc">
+                    Annual contract review with <strong>Oguz B</strong> for <strong>Miner House</strong> in Monterrey 🏢
+                </p>
+            </div>
+
+            <div class="critical-item">
+                <div class="critical-top">
+                    <span class="critical-name">Renewal Option</span>
+                    <span class="critical-badge">Feb 19</span>
+                </div>
+                <p class="critical-desc">
+                    Annual renewal option with <strong>Archie Edward</strong> for <strong>Modern House</strong> in New York 🏠
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Most Expensive Sites -->
+    <div class="bottom-card">
+        <h4 class="bottom-card-title">Most Expensive Sites</h4>
+        <div class="item-list">
+            <!-- Site 1 -->
+            <div class="site-item">
+                <div class="site-item-left">
+                    <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=100&auto=format&fit=crop&q=80" alt="Modern Villa" class="site-thumb">
+                    <div>
+                        <div class="site-name">Modern Villa</div>
+                        <div class="site-address">Armory Road, 28358</div>
+                    </div>
+                </div>
+                <div class="site-price">$14M</div>
+            </div>
+
+            <!-- Site 2 -->
+            <div class="site-item">
+                <div class="site-item-left">
+                    <img src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=100&auto=format&fit=crop&q=80" alt="Miner House" class="site-thumb">
+                    <div>
+                        <div class="site-name">Miner House</div>
+                        <div class="site-address">Armory Road, 28358</div>
+                    </div>
+                </div>
+                <div class="site-price">$9M</div>
+            </div>
+
+            <!-- Site 3 -->
+            <div class="site-item">
+                <div class="site-item-left">
+                    <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=100&auto=format&fit=crop&q=80" alt="Modern Villa" class="site-thumb">
+                    <div>
+                        <div class="site-name">Modern Villa</div>
+                        <div class="site-address">Stoney Lane, 75247</div>
+                    </div>
+                </div>
+                <div class="site-price">$7M</div>
+            </div>
+
+            <!-- Site 4 -->
+            <div class="site-item">
+                <div class="site-item-left">
+                    <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=100&auto=format&fit=crop&q=80" alt="Miner House" class="site-thumb">
+                    <div>
+                        <div class="site-name">Miner House</div>
+                        <div class="site-address">Central District, 10001</div>
+                    </div>
+                </div>
+                <div class="site-price">$5M</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Financial Schedule -->
+    <div class="bottom-card">
+        <h4 class="bottom-card-title">Critical Dates</h4>
+        <div class="item-list">
+            <!-- Item 1 -->
+            <div class="financial-item">
+                <div class="financial-left">
+                    <div class="financial-icon">
+                        <i class="ph ph-buildings"></i>
+                    </div>
+                    <div>
+                        <div class="financial-title">Annual Rentals</div>
+                        <div class="financial-date">May 30</div>
+                    </div>
+                </div>
+                <div class="financial-amount">$6,828.59</div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="financial-item">
+                <div class="financial-left">
+                    <div class="financial-icon">
+                        <i class="ph ph-wrench"></i>
+                    </div>
+                    <div>
+                        <div class="financial-title">Repair</div>
+                        <div class="financial-date">Feb 19</div>
+                    </div>
+                </div>
+                <div class="financial-amount">$6,828.59</div>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="financial-item">
+                <div class="financial-left">
+                    <div class="financial-icon">
+                        <i class="ph ph-users"></i>
+                    </div>
+                    <div>
+                        <div class="financial-title">Salaries</div>
+                        <div class="financial-date">Apr 30</div>
+                    </div>
+                </div>
+                <div class="financial-amount">$6,828.59</div>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="financial-item">
+                <div class="financial-left">
+                    <div class="financial-icon">
+                        <i class="ph ph-buildings"></i>
+                    </div>
+                    <div>
+                        <div class="financial-title">Annual Rentals</div>
+                        <div class="financial-date">Dec 15</div>
+                    </div>
+                </div>
+                <div class="financial-amount">$6,828.59</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server &amp; Multi-Apps Live Monitor</title>
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #FF5A1F;
+            --accent-dark: #18181B;
+            --accent-blue: #2563eb;
+            --accent-green: #059669;
+            --text-main: #18181B;
+            --text-muted: #71717A;
+            --text-light: #A1A1AA;
+            --bg-body: #EEF2F6;
+            --bg-glass: rgba(255, 255, 255, 0.88);
+            --border-glass: rgba(255, 255, 255, 0.95);
+            --border-subtle: rgba(0, 0, 0, 0.06);
+            --radius-card: 16px;
+            --radius-pill: 10px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #d8e0ea 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding-bottom: 50px;
+        }
+
+        .ambient-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.32;
+        }
+        .blob-1 {
+            width: 550px;
+            height: 550px;
+            background: #fed7aa;
+            top: -100px;
+            right: 5%;
+        }
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: #93c5fd;
+            top: 350px;
+            left: 5%;
+        }
+
+        /* Top Navbar */
+        nav {
+            position: sticky;
+            top: 14px;
+            margin: 14px auto 24px auto;
+            width: calc(100% - 32px);
+            max-width: 1300px;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(24px) saturate(190%);
+            -webkit-backdrop-filter: blur(24px) saturate(190%);
+            border-radius: 20px;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: #fff0eb;
+            color: var(--primary);
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-nav-primary {
+            background: #18181B;
+            color: #FFFFFF !important;
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(24, 24, 27, 0.15);
+        }
+
+        .btn-nav-primary:hover {
+            background: #27272A;
+            transform: translateY(-1px);
+        }
+
+        .btn-nav-outline {
+            background: #FFFFFF;
+            color: var(--text-main) !important;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.2s;
+        }
+
+        .btn-nav-outline:hover {
+            background: #f8fafc;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 16px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 4 KPI Metrics */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-card);
+            padding: 16px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .kpi-label {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-val {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 2px 0;
+            line-height: 1.1;
+        }
+
+        .kpi-sub {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
+        .kpi-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .kpi-blue { background: #eff6ff; color: #2563eb; }
+        .kpi-purple { background: #f5f3ff; color: #7c3aed; }
+        .kpi-emerald { background: #ecfdf5; color: #059669; }
+        .kpi-amber { background: #fffbeb; color: #d97706; }
+
+        /* Status Cards Wrapper Shell */
+        .content-shell {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(28px);
+            border-radius: 22px;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 20px 60px -15px rgba(15, 23, 42, 0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .toolbar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 20px;
+        }
+
+        .toolbar-title {
+            font-size: 18px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-main);
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            width: 260px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 14px 8px 36px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border-subtle);
+            background: #ffffff;
+            font-size: 13px;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 90, 31, 0.12);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .filter-select {
+            padding: 8px 14px;
+            border-radius: var(--radius-pill);
+            border: 1px solid var(--border-subtle);
+            background: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .btn-action {
+            padding: 8px 16px;
+            border-radius: var(--radius-pill);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary-action {
+            background: var(--primary);
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(255, 90, 31, 0.2);
+        }
+
+        .btn-primary-action:hover {
+            background: #e04812;
+            transform: translateY(-1px);
+        }
+
+        .btn-info-action {
+            background: #0284c7;
+            color: #ffffff !important;
+        }
+
+        .btn-info-action:hover {
+            background: #0369a1;
+            transform: translateY(-1px);
+        }
+
+        .btn-subtle {
+            background: #ffffff;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-subtle:hover {
+            background: #f8fafc;
+        }
+
+        /* App Cards Grid */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 16px;
+        }
+
+        .app-card {
+            background: #ffffff;
+            border-radius: var(--radius-card);
+            border: 1px solid var(--border-subtle);
+            border-top: 3.5px solid transparent;
+            padding: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .app-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.08);
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        .card-accent-1 { border-top-color: #f59e0b; }
+        .card-accent-2 { border-top-color: #3b82f6; }
+        .card-accent-3 { border-top-color: #10b981; }
+        .card-accent-4 { border-top-color: #8b5cf6; }
+        .card-accent-5 { border-top-color: #ec4899; }
+        .card-accent-6 { border-top-color: #06b6d4; }
+        .card-accent-7 { border-top-color: #f97316; }
+        .card-accent-8 { border-top-color: #14b8a6; }
+        .card-accent-9 { border-top-color: #6366f1; }
+        .card-accent-10 { border-top-color: #ef4444; }
+
+        .app-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #f5f3ff;
+            color: #7c3aed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-avatar-1 { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+        .bg-avatar-2 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; }
+        .bg-avatar-3 { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+        .bg-avatar-4 { background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; }
+        .bg-avatar-5 { background: linear-gradient(135deg, #ec4899, #be185d); color: #fff; }
+        .bg-avatar-6 { background: linear-gradient(135deg, #06b6d4, #0e7490); color: #fff; }
+        .bg-avatar-7 { background: linear-gradient(135deg, #f97316, #c2410c); color: #fff; }
+        .bg-avatar-8 { background: linear-gradient(135deg, #14b8a6, #0f766e); color: #fff; }
+        .bg-avatar-9 { background: linear-gradient(135deg, #6366f1, #4338ca); color: #fff; }
+        .bg-avatar-10 { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; }
+
+        .badge-pill {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .badge-ssh-active { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .badge-ssh-inactive { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .badge-svc-up { background: #059669; color: #ffffff !important; }
+        .badge-svc-down { background: #64748b; color: #ffffff !important; }
+        .badge-svc-failed { background: #dc2626; color: #ffffff !important; }
+        .badge-svc-idle { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .badge-svc-unconfigured { background: #f8fafc; color: #94a3b8; border: 1px dashed #cbd5e1; }
+
+        .chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 10px 0;
+        }
+
+        .chip {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        @media (max-width: 480px) {
+            .card-actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .btn-card-act {
+            padding: 5px 6px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .btn-act-dump { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+        .btn-act-dump:hover { background: #6d28d9; color: #fff; }
+        
+        .btn-act-files { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .btn-act-files:hover { background: #1d4ed8; color: #fff; }
+        
+        .btn-act-log { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+        .btn-act-log:hover { background: #d97706; color: #fff; }
+        
+        .btn-act-user { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+        .btn-act-user:hover { background: #059669; color: #fff; }
+        
+        .btn-act-query { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+        .btn-act-query:hover { background: #0284c7; color: #fff; }
+        
+        .btn-act-pull { background: #f3e8ff; color: #7e22ce; border-color: #e9d5ff; }
+        .btn-act-pull:hover { background: #7c3aed; color: #fff; }
+        
+        .btn-act-terminal { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+        .btn-act-terminal:hover { background: #1e293b; color: #fff; }
+        
+        .btn-act-restart { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        .btn-act-restart:hover { background: #0284c7; color: #fff; }
+
+        .card-crud-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px dashed var(--border-subtle);
+        }
+
+        /* Modal */
+        .custom-modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .custom-modal {
+            background: #ffffff;
+            border-radius: 18px;
+            max-width: 800px;
+            width: 92%;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.25);
+            overflow: hidden;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .custom-modal-header {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 16px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .custom-modal-body {
+            padding: 20px 22px;
+            background: #f8fafc;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .custom-modal-footer {
+            padding: 12px 22px;
+            background: #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .terminal-output {
+            background: #11111b;
+            color: #cdd6f4;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            padding: 14px;
+            border-radius: 10px;
+            max-height: 350px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        @media (max-width: 992px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .app-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 576px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+            .search-box { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ambient-blob blob-1"></div>
+<div class="ambient-blob blob-2"></div>
+
+<!-- Top Navigation -->
+<nav>
+    <a href="/" class="logo">
+        <div class="logo-icon">
+            <i class="ph-duotone ph-gauge"></i>
+        </div>
+        <span>Server &amp; Multi-Apps Monitor</span>
+    </a>
+
+    <div class="nav-links">
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('monitor.dashboard') }}" class="btn-nav-primary">
+                <i class="ph ph-squares-four"></i> Dashboard Panel
+            </a>
+            <a href="{{ url_for('logout') }}" class="btn-nav-outline">
+                <i class="ph ph-sign-out"></i> Logout
+            </a>
+        {% else %}
+            <a href="{{ url_for('login') }}" class="btn-nav-primary">
+                <i class="ph ph-sign-in"></i> Masuk (Login)
+            </a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="main-container">
+    <!-- 4 KPI Metrics -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Server Host</div>
+                <div class="kpi-val">{{ total_servers }}</div>
+                <div class="kpi-sub"><i class="ph ph-check-circle"></i> SSH Ready</div>
+            </div>
+            <div class="kpi-icon-box kpi-blue">
+                <i class="ph ph-hard-drives"></i>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Aplikasi Terpasang</div>
+                <div class="kpi-val">{{ total_apps }}</div>
+                <div class="kpi-sub"><i class="ph ph-check-circle"></i> Multi-Tenant</div>
+            </div>
+            <div class="kpi-icon-box kpi-purple">
+                <i class="ph ph-cube"></i>
+            </div>
+        </div>
+
+        <div class="kpi-card">
+            <div>
+                <div class="kpi-label">Jump Host Proxy</div>
+                <div class="kpi-val">{{ total_jumps }}</div>
+                <div class="kpi-sub"><i class="ph ph-check-circle"></i> Multi-Hop Tunnel</div>
+            </div>
+            <div class="kpi-icon-box kpi-emerald">
+                <i class="ph ph-git-merge"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Live Status Cards Shell -->
+    <div class="content-shell">
+        <div class="toolbar-header">
+            <div>
+                <h3 class="toolbar-title">
+                    <i class="ph-duotone ph-cubes" style="color: var(--primary);"></i> Multi-Apps Live Status Cards
+                </h3>
+                <span style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px; display: inline-block;">
+                    Menampilkan <strong id="visibleAppCount">{{ apps|length }}</strong> dari total {{ apps|length }} profil aplikasi aktif
+                </span>
+            </div>
+
+            <div class="toolbar-actions">
+                <div class="search-box">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <input type="text" id="appSearch" placeholder="Cari nama, server, database..." onkeyup="filterDashboardApps()">
+                </div>
+
+                <select id="statusFilter" class="filter-select" onchange="filterDashboardApps()">
+                    <option value="all">Semua Status</option>
+                    <option value="ssh-active">SSH: Aktif</option>
+                    <option value="ssh-inactive">SSH: Non-Aktif</option>
+                    <option value="svc-up">Service: UP (Running)</option>
+                    <option value="svc-down">Service: DOWN (Stopped)</option>
+                    <option value="svc-failed">Service: FAILED</option>
+                </select>
+
+                <button type="button" id="btnCheckAllApps" class="btn-action btn-info-action" onclick="checkAllDashboardApps()">
+                    <i class="ph ph-plugs"></i> Cek Semua Status
+                </button>
+
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('monitor.app_add') }}" class="btn-action btn-primary-action">
+                    <i class="ph ph-plus"></i> Tambah
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Application Cards Grid -->
+        <div class="app-grid" id="dashboardAppContainer">
+            {% for a in apps %}
+            <div class="app-card card-accent-{{ (a.id % 10) + 1 }}" data-search="{{ a.nama }} {{ a.server_nama }} {{ a.server_host }} {{ a.kode }} {{ a.db_name }}" data-ssh-status="{{ 'ssh-active' if a.status else 'ssh-inactive' }}" data-svc-status="{{ 'svc-up' if a.status else 'svc-down' if a.service_path != '-' else 'svc-unconfigured' }}" data-id="{{ a.id }}">
+                <div>
+                    <!-- Top Card Info -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="app-avatar bg-avatar-{{ (a.id % 10) + 1 }}">
+                                <i class="ph ph-cube"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 14.5px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">{{ a.nama }}</h4>
+                                <div style="font-size: 11.5px; color: var(--text-muted);">
+                                    {{ a.server_nama }} <code style="font-size: 11px;">({{ a.server_host }})</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dual Badges -->
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span id="badge-ssh-{{ a.id }}" class="badge-pill {{ 'badge-ssh-active' if a.status else 'badge-ssh-inactive' }}">
+                                    <i class="ph ph-terminal"></i> SSH: {{ 'Aktif' if a.status else 'Non-Aktif' }}
+                                </span>
+                                <button type="button" class="btn-action btn-subtle" onclick="checkSingleDashboardApp({{ a.id }})" style="padding: 2px 6px; font-size: 10px;" title="Cek SSH & Service">
+                                    <i class="ph ph-arrows-clockwise" id="icon-app-{{ a.id }}"></i>
+                                </button>
+                            </div>
+                            <div>
+                                <span id="badge-svc-{{ a.id }}" class="badge-pill {% if a.service_path == '-' %}badge-svc-unconfigured{% elif a.status %}badge-svc-up{% else %}badge-svc-down{% endif %}" onclick="openServiceDetail({{ a.id }}, '{{ a.nama }}', '{{ a.service_path }}', '{{ a.service_type }}')" style="cursor: pointer;" title="Klik untuk inspeksi detail log service">
+                                    {% if a.service_path == '-' %}
+                                        <i class="ph ph-warning-circle"></i> Service: Belum Diatur
+                                    {% elif a.status %}
+                                        <i class="ph ph-play-circle"></i> Service: UP
+                                    {% else %}
+                                        <i class="ph ph-stop-circle"></i> Service: DOWN
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chips Info -->
+                    <div class="chip-list">
+                        <span class="chip"><i class="ph ph-tag" style="color: #64748b;"></i> {{ a.kode }}</span>
+                        <span class="chip"><i class="ph ph-database" style="color: #0284c7;"></i> {{ a.db_name }}</span>
+                        <span class="chip"><i class="ph ph-cogs" style="color: #d97706;"></i> {{ a.service_type }}: {{ a.service_path }}</span>
+                    </div>
+                </div>
+
+                <!-- Card Bottom Actions (8 buttons) -->
+                <div class="card-actions-grid">
+                    <button type="button" class="btn-card-act btn-act-dump" onclick="openDumpModal({{ a.id }}, '{{ a.nama }}', '{{ a.db_name }}')" title="Dump Database PostgreSQL">
+                        <i class="ph ph-database"></i> Dump DB
+                    </button>
+                    <button type="button" class="btn-card-act btn-act-files" onclick="openFileManagerModal({{ a.id }}, '{{ a.nama }}', '{{ a.server_nama }}', '{{ a.default_download_path }}')" title="Remote File Manager">
+                        <i class="ph ph-folder-open"></i> Files
+                    </button>
+                    <button type="button" class="btn-card-act btn-act-log" onclick="openLogViewerModal({{ a.id }}, '{{ a.nama }}', '{{ a.server_nama }}', '{{ a.app_log_path if a.app_log_path != '-' else (a.app_ini_path if a.app_ini_path != '-' else '') }}')" title="Live Log Viewer">
+                        <i class="ph ph-file-text"></i> Log
+                    </button>
+                    <button type="button" class="btn-card-act btn-act-user" onclick="openUserAccessModal({{ a.id }}, '{{ a.nama }}', '{{ a.server_nama }}')" title="List User (Python)">
+                        <i class="ph ph-users"></i> Users
+                    </button>
+                    <a href="{{ url_for('monitor.sql_query', app_id=a.id) }}" class="btn-card-act btn-act-query" title="SQL Query Console">
+                        <i class="ph ph-code"></i> Query
+                    </a>
+                    <button type="button" class="btn-card-act btn-act-pull" onclick="openGitPullModal({{ a.id }}, '{{ a.nama }}', '{{ a.server_nama }}', '{{ a.default_download_path }}')" title="Git Pull (AJAX Modal)">
+                        <i class="ph ph-git-pull-request"></i> Pull
+                    </button>
+                    <button type="button" class="btn-card-act btn-act-terminal" onclick="openTerminalModal({{ a.id }}, '{{ a.nama }}', '{{ a.server_nama }}', '{{ a.default_download_path }}')" title="SSH Web Terminal">
+                        <i class="ph ph-terminal"></i> Terminal
+                    </button>
+                    <button type="button" class="btn-card-act btn-act-restart" onclick="doRestartAppService({{ a.id }}, '{{ a.nama }}', '{{ a.service_path }}', '{{ a.service_type }}')" title="Restart Service Aplikasi">
+                        <i class="ph ph-arrows-clockwise"></i> Restart
+                    </button>
+                </div>
+
+                <div class="card-crud-row">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('monitor.app_edit', id=a.id) }}" class="btn-action btn-subtle" style="padding: 3px 8px; font-size: 11px;" title="Edit Konfigurasi">
+                        <i class="ph ph-pencil-simple text-primary"></i> Edit
+                    </a>
+                    {% else %}
+                    <span style="font-size: 11px; color: var(--text-muted);">{{ a.server_nama }}</span>
+                    {% endif %}
+                    <span style="font-size: 11px; color: var(--text-muted);">{{ a.kode }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                <i class="ph ph-cube" style="font-size: 36px; color: #cbd5e1; display: block; margin-bottom: 8px;"></i>
+                Belum ada profil aplikasi yang dikonfigurasi.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODALS -->
+<!-- ========================================================================= -->
+
+<!-- 1. Modal Detail Status Service -->
+<div id="serviceStatusModal" class="custom-modal-backdrop">
+    <div class="custom-modal">
+        <div class="custom-modal-header">
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-info" style="color: var(--primary);"></i> Status Service &bull; <span id="modalAppName">-</span>
+            </h4>
+            <button type="button" onclick="closeModal('serviceStatusModal')" style="background: none; border: none; color: #fff; font-size: 22px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="custom-modal-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="font-size: 13px;">
+                    Target: <code id="modalServiceTarget" style="font-weight: 700; color: #0284c7;">-</code>
+                </div>
+                <div id="modalStatusBadgeArea">
+                    <span id="modalStatusBadge" class="badge-pill badge-svc-idle">Memeriksa...</span>
+                </div>
+            </div>
+            <pre class="terminal-output" id="modalStatusOutput">Menghubungi server host remote...</pre>
+        </div>
+        <div class="custom-modal-footer">
+            <button type="button" id="btnModalRestart" class="btn-action btn-primary-action" style="padding: 6px 14px; font-size: 12px;">
+                <i class="ph ph-arrows-clockwise"></i> Restart Service Ini
+            </button>
+            <button type="button" class="btn-action btn-subtle" onclick="closeModal('serviceStatusModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Modal Dump Database (AJAX) -->
+<div id="dumpDbModal" class="custom-modal-backdrop">
+    <div class="custom-modal">
+        <div class="custom-modal-header">
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-database" style="color: #a855f7;"></i> Dump Database &bull; <span id="modalDumpAppName">-</span>
+            </h4>
+            <button type="button" onclick="closeModal('dumpDbModal')" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="custom-modal-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="font-size: 13px;">
+                    Database: <code id="modalDumpDbName" style="font-weight: 700; color: #0284c7;">-</code>
+                </div>
+                <div id="modalDumpStatusBadgeArea">
+                    <span id="modalDumpStatusBadge" class="badge-pill badge-svc-idle">Mengekstraksi...</span>
+                </div>
+            </div>
+            <pre class="terminal-output" id="modalDumpOutput">Memulai proses ekstraksi database via SSH...</pre>
+            
+            <div id="modalDumpDownloadArea" style="display: none; margin-top: 15px; padding: 14px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; text-align: center;">
+                <p style="margin: 0 0 10px 0; color: #065f46; font-size: 13px; font-weight: 600;">
+                    <i class="ph ph-check-circle" style="color: #059669; font-size: 18px;"></i> Dump Berhasil Dibuat!
+                    <span id="modalDumpMeta" style="display: block; font-size: 12px; color: #047857; margin-top: 4px;">-</span>
+                </p>
+                <a id="btnDownloadDump" href="#" class="btn-action btn-primary-action" style="padding: 6px 18px; font-size: 12px; background: #059669;">
+                    <i class="ph ph-download-simple"></i> Unduh File (.sql.gz)
+                </a>
+            </div>
+        </div>
+        <div class="custom-modal-footer">
+            <button type="button" id="btnRetryDump" class="btn-action btn-subtle" style="padding: 6px 14px; font-size: 12px;">
+                <i class="ph ph-arrows-clockwise"></i> Ulangi Dump
+            </button>
+            <button type="button" class="btn-action btn-subtle" onclick="closeModal('dumpDbModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Modal Log Viewer (AJAX) -->
+<div id="logViewerModal" class="custom-modal-backdrop">
+    <div class="custom-modal" style="max-width: 950px;">
+        <div class="custom-modal-header">
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-file-text" style="color: #f59e0b;"></i> Live Log Viewer &bull; <span id="modalLogAppName">-</span>
+            </h4>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <a id="btnDownloadLog" href="#" class="btn-action btn-subtle" style="padding: 3px 10px; font-size: 11px; background: #334155; color: #fff; border-color: #475569;">
+                    <i class="ph ph-download-simple"></i> Unduh Log
+                </a>
+                <button type="button" onclick="closeModal('logViewerModal')" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+        </div>
+        <div class="custom-modal-body">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+                <input type="text" id="modalLogPath" class="filter-select" style="flex: 1; min-width: 250px;" placeholder="Path file log / .ini">
+                <select id="modalLogLines" class="filter-select" style="width: 120px;">
+                    <option value="100">100 baris</option>
+                    <option value="300">300 baris</option>
+                    <option value="500" selected>500 baris</option>
+                    <option value="1000">1000 baris</option>
+                    <option value="2000">2000 baris</option>
+                </select>
+                <button type="button" class="btn-action btn-primary-action" onclick="fetchLogContent()" style="padding: 6px 14px; font-size: 12px; background: #f59e0b;">
+                    <i class="ph ph-arrows-clockwise"></i> Muat Log
+                </button>
+            </div>
+            <pre class="terminal-output" id="modalLogOutput" style="max-height: 450px;">Memuat data log remote...</pre>
+        </div>
+        <div class="custom-modal-footer">
+            <span style="font-size: 12px; color: var(--text-muted);" id="modalLogStatusInfo">Server: -</span>
+            <button type="button" class="btn-action btn-subtle" onclick="closeModal('logViewerModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Modal Git Pull (AJAX) -->
+<div id="gitPullModal" class="custom-modal-backdrop">
+    <div class="custom-modal" style="max-width: 850px;">
+        <div class="custom-modal-header">
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-git-pull-request" style="color: #818cf8;"></i> Git Pull &amp; Update &bull; <span id="modalPullAppName">-</span>
+            </h4>
+            <button type="button" onclick="closeModal('gitPullModal')" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="custom-modal-body">
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="modalPullPath" class="filter-select" style="flex: 2; min-width: 250px;" placeholder="Path Direktori Git (/home/webr/apps)">
+                    <select id="modalPullPreset" class="filter-select" style="flex: 1;" onchange="document.getElementById('modalPullCmd').value = this.value">
+                        <option value="git pull">git pull</option>
+                        <option value="git status">git status</option>
+                        <option value="git log -n 5 --oneline">git log (5 terakhir)</option>
+                        <option value="git fetch --all">git fetch --all</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="modalPullCmd" class="filter-select" style="flex: 1;" value="git pull" placeholder="Perintah git">
+                    <label style="font-size: 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                        <input type="checkbox" id="modalPullChmod" checked> Auto chmod (640 / 775)
+                    </label>
+                    <button type="button" class="btn-action btn-primary-action" onclick="execGitPull()" style="padding: 6px 16px; font-size: 12px; background: #4f46e5;">
+                        <i class="ph ph-play"></i> Eksekusi
+                    </button>
+                </div>
+            </div>
+            <pre class="terminal-output" id="modalPullOutput" style="max-height: 380px;">Siap mengeksekusi git. Klik tombol "Eksekusi" di atas.</pre>
+        </div>
+        <div class="custom-modal-footer">
+            <span style="font-size: 12px; color: var(--text-muted);" id="modalPullElapsed">Status: Siap</span>
+            <button type="button" class="btn-action btn-subtle" onclick="closeModal('gitPullModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Modal Terminal (AJAX) -->
+<div id="terminalModal" class="custom-modal-backdrop">
+    <div class="custom-modal" style="max-width: 850px;">
+        <div class="custom-modal-header">
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-terminal" style="color: #38bdf8;"></i> Web Terminal SSH &bull; <span id="modalTermAppName">-</span>
+            </h4>
+            <button type="button" onclick="closeModal('terminalModal')" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="custom-modal-body">
+            <div style="display: flex; gap: 8px; margin-bottom: 10px; align-items: center;">
+                <span style="font-size: 12px; font-weight: 700; color: #64748b;">PWD:</span>
+                <code id="modalTermPwd" style="font-size: 12px; color: #0284c7; flex: 1;">-</code>
+                <label style="font-size: 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    <input type="checkbox" id="modalTermSudo"> Sudo Root
+                </label>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="text" id="modalTermCmd" class="filter-select" style="flex: 1; font-family: monospace;" placeholder="Ketik perintah (contoh: uptime, df -h, free -m)..." onkeypress="if(event.key==='Enter') execTerminalCmd()">
+                <button type="button" class="btn-action btn-primary-action" onclick="execTerminalCmd()" style="padding: 6px 16px; font-size: 12px; background: #1e293b;">
+                    <i class="ph ph-paper-plane-right"></i> Kirim
+                </button>
+            </div>
+            <pre class="terminal-output" id="modalTermOutput" style="max-height: 400px; min-height: 200px;">Terminal siap. Ketik perintah di atas.</pre>
+        </div>
+        <div class="custom-modal-footer">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn-action btn-subtle" style="padding: 2px 8px; font-size: 11px;" onclick="runPresetCmd('uptime')">uptime</button>
+                <button type="button" class="btn-action btn-subtle" style="padding: 2px 8px; font-size: 11px;" onclick="runPresetCmd('free -h')">free -h</button>
+                <button type="button" class="btn-action btn-subtle" style="padding: 2px 8px; font-size: 11px;" onclick="runPresetCmd('df -h')">df -h</button>
+                <button type="button" class="btn-action btn-subtle" style="padding: 2px 8px; font-size: 11px;" onclick="runPresetCmd('ps aux | grep python')">ps python</button>
+            </div>
+            <button type="button" class="btn-action btn-subtle" onclick="closeModal('terminalModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- 6. Modal File Manager (AJAX) -->
+<div id="fileManagerModal" class="custom-modal-backdrop">
+    <div class="custom-modal" style="max-width: 900px;">
+        <div class="custom-modal-header">
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-folder-open" style="color: #3b82f6;"></i> File Manager &bull; <span id="modalFmAppName">-</span>
+            </h4>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <a id="btnFmDownloadArchive" href="#" class="btn-action btn-subtle" style="padding: 3px 10px; font-size: 11px; background: #2563eb; color: #fff;">
+                    <i class="ph ph-download-simple"></i> Unduh Folder (.tar.gz)
+                </a>
+                <button type="button" onclick="closeModal('fileManagerModal')" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+        </div>
+        <div class="custom-modal-body">
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                <button type="button" class="btn-action btn-subtle" id="btnFmUp" style="padding: 4px 8px;">
+                    <i class="ph ph-arrow-up"></i>
+                </button>
+                <input type="text" id="modalFmPath" class="filter-select" style="flex: 1; font-family: monospace;" placeholder="/home/webr/apps">
+                <button type="button" class="btn-action btn-info-action" onclick="fetchFileManager(document.getElementById('modalFmPath').value)" style="padding: 4px 12px; font-size: 12px;">
+                    Buka
+                </button>
+            </div>
+            <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; max-height: 400px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                    <thead style="background: #f1f5f9; position: sticky; top: 0;">
+                        <tr>
+                            <th style="padding: 8px 12px;">Nama</th>
+                            <th style="padding: 8px 12px; width: 90px;">Ukuran</th>
+                            <th style="padding: 8px 12px; width: 80px;">Hak Akses</th>
+                            <th style="padding: 8px 12px; width: 140px;">Waktu Modifikasi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalFmTableBody">
+                        <tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">Memuat direktori...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="custom-modal-footer">
+            <span style="font-size: 12px; color: var(--text-muted);" id="modalFmStatus">Total items: -</span>
+            <button type="button" class="btn-action btn-subtle" onclick="closeModal('fileManagerModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- 7. Modal List User Python (AJAX) -->
+<div id="userAccessModal" class="custom-modal-backdrop">
+    <div class="custom-modal" style="max-width: 900px;">
+        <div class="custom-modal-header">
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="ph ph-users" style="color: #10b981;"></i> List User (Python Database) &bull; <span id="modalUserAppName">-</span>
+            </h4>
+            <button type="button" onclick="closeModal('userAccessModal')" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+        </div>
+        <div class="custom-modal-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="font-size: 13px;">
+                    Server: <strong id="modalUserServerName">-</strong>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <select id="modalUserFilter" class="filter-select" onchange="fetchUserAccess(activeAppId, this.value)">
+                        <option value="all">Semua User</option>
+                        <option value="pegawai_only">Hanya Pegawai</option>
+                    </select>
+                    <button type="button" class="btn-action btn-info-action" onclick="fetchUserAccess(activeAppId, document.getElementById('modalUserFilter').value)" style="padding: 4px 10px; font-size: 11px;">
+                        <i class="ph ph-arrows-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; max-height: 420px; overflow-y: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                    <thead style="background: #f1f5f9; position: sticky; top: 0;">
+                        <tr>
+                            <th style="padding: 8px 12px; width: 40px; text-align: center;">No</th>
+                            <th style="padding: 8px 12px;">Username</th>
+                            <th style="padding: 8px 12px;">Nama Lengkap</th>
+                            <th style="padding: 8px 12px;">Email</th>
+                            <th style="padding: 8px 12px;">Grup / Role</th>
+                            <th style="padding: 8px 12px; text-align: center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalUserTableBody">
+                        <tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;">Memuat data pengguna...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="custom-modal-footer">
+            <span style="font-size: 12px; color: var(--text-muted);" id="modalUserTotal">Total: - user</span>
+            <button type="button" class="btn-action btn-subtle" onclick="closeModal('userAccessModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+var activeAppId = null;
+var activeAppName = '';
+var activeService = '';
+var activeType = 'systemd';
+var activeServerName = '';
+var activeDefaultPath = '';
+var activeLogPath = '';
+var activeFmCurrentPath = '';
+var activeFmParentPath = '';
+
+function filterDashboardApps() {
+    var q = (document.getElementById('appSearch').value || '').toLowerCase().trim();
+    var filter = document.getElementById('statusFilter').value;
+    var cards = document.querySelectorAll('.app-card');
+    var visible = 0;
+
+    cards.forEach(function(card) {
+        var str = (card.getAttribute('data-search') || '').toLowerCase();
+        var sshStatus = card.getAttribute('data-ssh-status') || '';
+        var svcStatus = card.getAttribute('data-svc-status') || '';
+
+        var matchesQuery = !q || str.indexOf(q) > -1;
+        var matchesFilter = true;
+
+        if (filter === 'ssh-active') matchesFilter = (sshStatus === 'ssh-active');
+        else if (filter === 'ssh-inactive') matchesFilter = (sshStatus === 'ssh-inactive');
+        else if (filter === 'svc-up') matchesFilter = (svcStatus === 'svc-up');
+        else if (filter === 'svc-down') matchesFilter = (svcStatus === 'svc-down');
+        else if (filter === 'svc-failed') matchesFilter = (svcStatus === 'svc-failed');
+
+        if (matchesQuery && matchesFilter) {
+            card.style.display = 'flex';
+            visible++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    var counter = document.getElementById('visibleAppCount');
+    if (counter) counter.innerText = visible;
+}
+
+function updateAppBadge(appId, sshOk, svcStatusText, svcIsUp, isFailed) {
+    var sshBadge = document.getElementById('badge-ssh-' + appId);
+    var svcBadge = document.getElementById('badge-svc-' + appId);
+    var card = document.querySelector('.app-card[data-id="' + appId + '"]');
+
+    if (sshBadge) {
+        if (sshOk) {
+            sshBadge.className = 'badge-pill badge-ssh-active';
+            sshBadge.innerHTML = '<i class="ph ph-terminal"></i> SSH: Aktif';
+            if (card) card.setAttribute('data-ssh-status', 'ssh-active');
+        } else {
+            sshBadge.className = 'badge-pill badge-ssh-inactive';
+            sshBadge.innerHTML = '<i class="ph ph-x-circle"></i> SSH: Gagal';
+            if (card) card.setAttribute('data-ssh-status', 'ssh-inactive');
+        }
+    }
+
+    if (svcBadge) {
+        if (!sshOk) {
+            svcBadge.className = 'badge-pill badge-svc-failed';
+            svcBadge.innerHTML = '<i class="ph ph-x-circle"></i> Host Unreachable';
+            if (card) card.setAttribute('data-svc-status', 'svc-failed');
+        } else if (isFailed) {
+            svcBadge.className = 'badge-pill badge-svc-failed';
+            svcBadge.innerHTML = '<i class="ph ph-warning"></i> Service: ' + (svcStatusText || 'FAILED');
+            if (card) card.setAttribute('data-svc-status', 'svc-failed');
+        } else if (svcIsUp) {
+            svcBadge.className = 'badge-pill badge-svc-up';
+            svcBadge.innerHTML = '<i class="ph ph-play-circle"></i> Service: UP';
+            if (card) card.setAttribute('data-svc-status', 'svc-up');
+        } else {
+            svcBadge.className = 'badge-pill badge-svc-down';
+            svcBadge.innerHTML = '<i class="ph ph-stop-circle"></i> Service: ' + (svcStatusText || 'DOWN');
+            if (card) card.setAttribute('data-svc-status', 'svc-down');
+        }
+    }
+}
+
+function checkSingleDashboardApp(appId) {
+    var icon = document.getElementById('icon-app-' + appId);
+    if (icon) icon.classList.add('ph-spin');
+
+    var svcBadge = document.getElementById('badge-svc-' + appId);
+    if (svcBadge) {
+        svcBadge.className = 'badge-pill badge-svc-idle';
+        svcBadge.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Cek...';
+    }
+
+    fetch('/monitor/apps/act/check_status?id=' + appId)
+        .then(function(res) {
+            if (res.redirected && res.url.indexOf('/login') > -1) {
+                window.location.href = '/login';
+                return;
+            }
+            return res.json();
+        })
+        .then(function(data) {
+            if (icon) icon.classList.remove('ph-spin');
+            if (!data) return;
+            var isFailed = (data.service_status === 'failed' || data.service_status === 'error');
+            updateAppBadge(appId, data.ssh_success, data.service_status_text, data.service_is_up, isFailed);
+        })
+        .catch(function(err) {
+            if (icon) icon.classList.remove('ph-spin');
+            console.error(err);
+        });
+}
+
+function checkAllDashboardApps() {
+    var btn = document.getElementById('btnCheckAllApps');
+    if (!btn) return;
+    var originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Memeriksa Semua...';
+
+    var allIcons = document.querySelectorAll('[id^="icon-app-"]');
+    allIcons.forEach(function(ic) { ic.classList.add('ph-spin'); });
+
+    var allSvcBadges = document.querySelectorAll('[id^="badge-svc-"]');
+    allSvcBadges.forEach(function(sb) {
+        sb.className = 'badge-pill badge-svc-idle';
+        sb.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Cek...';
+    });
+
+    fetch('/monitor/apps/act/check_all')
+        .then(function(res) {
+            if (res.redirected && res.url.indexOf('/login') > -1) {
+                window.location.href = '/login';
+                return;
+            }
+            return res.json();
+        })
+        .then(function(data) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            allIcons.forEach(function(ic) { ic.classList.remove('ph-spin'); });
+
+            if (data && data.results) {
+                data.results.forEach(function(r) {
+                    var isFailed = (r.service_status === 'failed' || r.service_status === 'error');
+                    updateAppBadge(r.app_id, r.ssh_success, r.service_status_text, r.service_is_up, isFailed);
+                });
+            }
+        })
+        .catch(function(err) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            allIcons.forEach(function(ic) { ic.classList.remove('ph-spin'); });
+            console.error(err);
+        });
+}
+
+function openServiceDetail(appId, appName, servicePath, serviceType) {
+    activeAppId = appId;
+    activeAppName = appName;
+    activeService = servicePath;
+    activeType = serviceType || 'systemd';
+
+    document.getElementById('modalAppName').innerText = appName;
+    document.getElementById('modalServiceTarget').innerText = serviceType + ': ' + (servicePath || '(Auto-Detect)');
+    document.getElementById('modalStatusOutput').innerText = 'Menghubungi server host remote...';
+    document.getElementById('modalStatusBadge').className = 'badge-pill badge-svc-idle';
+    document.getElementById('modalStatusBadge').innerText = 'Memeriksa...';
+
+    document.getElementById('serviceStatusModal').style.display = 'flex';
+
+    fetch('/monitor/apps/act/check_status?id=' + appId)
+        .then(function(res) {
+            if (res.redirected && res.url.indexOf('/login') > -1) {
+                window.location.href = '/login';
+                return;
+            }
+            return res.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            var out = document.getElementById('modalStatusOutput');
+            var badge = document.getElementById('modalStatusBadge');
+            out.innerText = data.service_output || 'Tidak ada output terminal yang dikembalikan.';
+
+            if (data.service_is_up) {
+                badge.className = 'badge-pill badge-svc-up';
+                badge.innerHTML = '<i class="ph ph-play-circle"></i> Running (UP)';
+            } else if (data.service_status === 'failed' || data.service_status === 'error') {
+                badge.className = 'badge-pill badge-svc-failed';
+                badge.innerHTML = '<i class="ph ph-warning"></i> ' + (data.service_status_text || 'FAILED');
+            } else {
+                badge.className = 'badge-pill badge-svc-down';
+                badge.innerHTML = '<i class="ph ph-stop-circle"></i> ' + (data.service_status_text || 'STOPPED');
+            }
+        })
+        .catch(function(err) {
+            document.getElementById('modalStatusOutput').innerText = 'Error: ' + err;
+        });
+}
+
+function doRestartAppService(appId, appName, servicePath, serviceType) {
+    if (!confirm('Apakah Anda yakin ingin me-restart service ' + (servicePath || appName) + '?')) {
+        return;
+    }
+
+    var svcBadge = document.getElementById('badge-svc-' + appId);
+    if (svcBadge) {
+        svcBadge.className = 'badge-pill badge-svc-idle';
+        svcBadge.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Restarting...';
+    }
+
+    fetch('/monitor/apps/act/restart_service?id=' + appId + '&service_path=' + encodeURIComponent(servicePath || '') + '&service_type=' + encodeURIComponent(serviceType || 'systemd'))
+        .then(function(res) {
+            if (res.redirected && res.url.indexOf('/login') > -1) {
+                window.location.href = '/login';
+                return;
+            }
+            return res.json();
+        })
+        .then(function(data) {
+            if (data && data.success) {
+                alert('Service berhasil di-restart!\n\n' + (data.output || 'OK'));
+            } else {
+                alert('Gagal me-restart service:\n\n' + (data ? (data.message || data.output) : 'Unknown error'));
+            }
+            checkSingleDashboardApp(appId);
+        })
+        .catch(function(err) {
+            alert('Terjadi kesalahan jaringan: ' + err);
+            checkSingleDashboardApp(appId);
+        });
+}
+
+/* 2. DUMP DATABASE AJAX */
+function openDumpModal(appId, appName, dbName) {
+    activeAppId = appId;
+    document.getElementById('modalDumpAppName').innerText = appName;
+    document.getElementById('modalDumpDbName').innerText = dbName || '-';
+    document.getElementById('modalDumpStatusBadge').className = 'badge-pill badge-svc-idle';
+    document.getElementById('modalDumpStatusBadge').innerText = 'Mengekstraksi...';
+    document.getElementById('modalDumpOutput').innerText = 'Menghubungi database target via SSH tunnel...\nMemulai streaming pg_dump / psycopg2 COPY stream...\nHarap tunggu sebentar...';
+    document.getElementById('modalDumpDownloadArea').style.display = 'none';
+    document.getElementById('dumpDbModal').style.display = 'flex';
+
+    document.getElementById('btnRetryDump').onclick = function() {
+        openDumpModal(appId, appName, dbName);
+    };
+
+    fetch('/monitor/apps/act/dump_db?id=' + appId)
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if (res && res.success) {
+                document.getElementById('modalDumpStatusBadge').className = 'badge-pill badge-svc-up';
+                document.getElementById('modalDumpStatusBadge').innerText = 'Selesai';
+                document.getElementById('modalDumpOutput').innerText = 'Dump database berhasil dibuat dalam ' + res.elapsed_seconds + ' detik.\nMetode: ' + res.method + '\nUkuran Berkas: ' + res.file_size + '\nNama File: ' + res.filename;
+                document.getElementById('modalDumpMeta').innerText = 'Ukuran: ' + res.file_size + ' | Metode: ' + res.method;
+                document.getElementById('btnDownloadDump').href = res.download_url;
+                document.getElementById('modalDumpDownloadArea').style.display = 'block';
+            } else {
+                document.getElementById('modalDumpStatusBadge').className = 'badge-pill badge-svc-failed';
+                document.getElementById('modalDumpStatusBadge').innerText = 'Gagal';
+                document.getElementById('modalDumpOutput').innerText = 'Gagal mengeksekusi dump database:\n' + (res ? res.message : 'Error tidak diketahui');
+            }
+        })
+        .catch(function(err) {
+            document.getElementById('modalDumpStatusBadge').className = 'badge-pill badge-svc-failed';
+            document.getElementById('modalDumpStatusBadge').innerText = 'Gagal';
+            document.getElementById('modalDumpOutput').innerText = 'Gagal menghubungi server: ' + err;
+        });
+}
+
+/* 3. LOG VIEWER AJAX */
+function openLogViewerModal(appId, appName, serverName, logPath) {
+    activeAppId = appId;
+    activeLogPath = logPath || '';
+    document.getElementById('modalLogAppName').innerText = appName;
+    document.getElementById('modalLogStatusInfo').innerText = 'Server: ' + serverName;
+    document.getElementById('modalLogPath').value = activeLogPath;
+    document.getElementById('btnDownloadLog').href = "/monitor/apps/act/download_log?id=" + appId + "&path=" + encodeURIComponent(activeLogPath);
+    document.getElementById('logViewerModal').style.display = 'flex';
+    fetchLogContent();
+}
+
+function fetchLogContent() {
+    var p = document.getElementById('modalLogPath').value;
+    var lines = document.getElementById('modalLogLines').value;
+    document.getElementById('modalLogOutput').innerText = 'Membaca ' + lines + ' baris terakhir dari: ' + (p || '(auto)') + '...';
+    document.getElementById('btnDownloadLog').href = "/monitor/apps/act/download_log?id=" + activeAppId + "&path=" + encodeURIComponent(p);
+
+    fetch("/monitor/apps/act/read_log?id=" + activeAppId + "&path=" + encodeURIComponent(p) + "&lines=" + lines)
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if (res && res.success) {
+                document.getElementById('modalLogOutput').innerText = res.content || '(Berkas log kosong)';
+            } else {
+                document.getElementById('modalLogOutput').innerText = 'Gagal membaca log:\n' + (res ? res.message : 'Error');
+            }
+        })
+        .catch(function(err) {
+            document.getElementById('modalLogOutput').innerText = 'Gagal membaca log: ' + err;
+        });
+}
+
+/* 4. GIT PULL AJAX */
+function openGitPullModal(appId, appName, serverName, defaultPath) {
+    activeAppId = appId;
+    activeDefaultPath = defaultPath && defaultPath !== '-' ? defaultPath : '/home/webr/apps';
+    document.getElementById('modalPullAppName').innerText = appName;
+    document.getElementById('modalPullPath').value = activeDefaultPath;
+    document.getElementById('modalPullOutput').innerText = 'Siap mengeksekusi git pada host: ' + serverName + '\nTarget: ' + activeDefaultPath;
+    document.getElementById('modalPullElapsed').innerText = 'Host: ' + serverName;
+    document.getElementById('gitPullModal').style.display = 'flex';
+}
+
+function execGitPull() {
+    var path = document.getElementById('modalPullPath').value;
+    var cmd = document.getElementById('modalPullCmd').value;
+    var chmod = document.getElementById('modalPullChmod').checked ? '1' : '0';
+
+    document.getElementById('modalPullOutput').innerText = 'Mengeksekusi ' + cmd + ' pada ' + path + ' via SSH...\nHarap tunggu sebentar...';
+    document.getElementById('modalPullElapsed').innerText = 'Status: Sedang Berjalan...';
+
+    var fd = new FormData();
+    fd.append('id', activeAppId);
+    fd.append('target_path', path);
+    fd.append('git_cmd', cmd);
+    fd.append('enable_chmod', chmod);
+
+    fetch("/monitor/apps/act/git_pull", { method: 'POST', body: fd })
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            document.getElementById('modalPullOutput').innerText = res.output || '(Tidak ada output)';
+            document.getElementById('modalPullElapsed').innerText = 'Selesai dalam ' + res.elapsed_ms + ' ms | Status: ' + (res.success ? 'SUCCESS' : 'FAILED');
+        })
+        .catch(function(err) {
+            document.getElementById('modalPullOutput').innerText = 'Gagal mengeksekusi perintah git: ' + err;
+            document.getElementById('modalPullElapsed').innerText = 'Status: Error';
+        });
+}
+
+/* 5. TERMINAL AJAX */
+function openTerminalModal(appId, appName, serverName, defaultPath) {
+    activeAppId = appId;
+    activeDefaultPath = defaultPath && defaultPath !== '-' ? defaultPath : '/home/webr';
+    document.getElementById('modalTermAppName').innerText = appName;
+    document.getElementById('modalTermPwd').innerText = activeDefaultPath;
+    document.getElementById('modalTermCmd').value = '';
+    document.getElementById('modalTermOutput').innerText = 'Terminal terhubung ke: ' + serverName + '\nDirektori: ' + activeDefaultPath + '\nKetik perintah shell di atas lalu tekan Kirim / Enter.';
+    document.getElementById('terminalModal').style.display = 'flex';
+}
+
+function execTerminalCmd() {
+    var cmd = document.getElementById('modalTermCmd').value.trim();
+    if (!cmd) return;
+    var pwd = document.getElementById('modalTermPwd').innerText;
+    var sudo = document.getElementById('modalTermSudo').checked ? '1' : '0';
+
+    document.getElementById('modalTermOutput').innerText = 'Menjalankan: ' + cmd + '...\n';
+
+    var fd = new FormData();
+    fd.append('app_id', activeAppId);
+    fd.append('command', cmd);
+    fd.append('workdir', pwd);
+    fd.append('use_sudo', sudo);
+
+    fetch("/monitor/apps/act/terminal_exec", { method: 'POST', body: fd })
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if (res.workdir) document.getElementById('modalTermPwd').innerText = res.workdir;
+            document.getElementById('modalTermOutput').innerText = '$ ' + cmd + '\n\n' + (res.output || '') + '\n\n[Exit Code: ' + res.exit_code + ' | ' + res.elapsed_ms + ' ms]';
+        })
+        .catch(function(err) {
+            document.getElementById('modalTermOutput').innerText = 'Gagal menjalankan perintah: ' + err;
+        });
+}
+
+function runPresetCmd(cmd) {
+    document.getElementById('modalTermCmd').value = cmd;
+    execTerminalCmd();
+}
+
+/* 6. FILE MANAGER AJAX */
+function openFileManagerModal(appId, appName, serverName, defaultPath) {
+    activeAppId = appId;
+    activeDefaultPath = defaultPath && defaultPath !== '-' ? defaultPath : '/home/webr/apps';
+    document.getElementById('modalFmAppName').innerText = appName;
+    document.getElementById('modalFmPath').value = activeDefaultPath;
+    document.getElementById('fileManagerModal').style.display = 'flex';
+    fetchFileManager(activeDefaultPath);
+}
+
+function fetchFileManager(path) {
+    document.getElementById('modalFmTableBody').innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;"><i class="ph ph-spinner ph-spin"></i> Memuat direktori ' + path + '...</td></tr>';
+    document.getElementById('btnFmDownloadArchive').href = "/monitor/apps/act/file_manager?id=" + activeAppId + "&action=download&path=" + encodeURIComponent(path);
+
+    fetch("/monitor/apps/act/file_manager?id=" + activeAppId + "&path=" + encodeURIComponent(path))
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if (res && res.success) {
+                activeFmCurrentPath = res.current_path;
+                activeFmParentPath = res.parent_path;
+                document.getElementById('modalFmPath').value = res.current_path;
+                document.getElementById('btnFmUp').onclick = function() {
+                    if (activeFmParentPath) fetchFileManager(activeFmParentPath);
+                };
+
+                var tbody = '';
+                if (!res.items || res.items.length === 0) {
+                    tbody = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">Direktori kosong</td></tr>';
+                } else {
+                    res.items.forEach(function(it) {
+                        var icon = it.is_dir ? '<i class="ph ph-folder" style="color: #f59e0b; font-size: 16px;"></i>' : '<i class="ph ph-file-text" style="color: #0284c7; font-size: 16px;"></i>';
+                        var nameClick = it.is_dir ? 'onclick="fetchFileManager(\'' + it.path + '\')" style="cursor: pointer; color: #0284c7; font-weight: 600;"' : '';
+                        tbody += '<tr style="border-bottom: 1px solid #f1f5f9;">' +
+                            '<td style="padding: 7px 12px; display: flex; align-items: center; gap: 8px;"><span ' + nameClick + '>' + icon + ' ' + it.name + '</span></td>' +
+                            '<td style="padding: 7px 12px; color: #64748b;">' + (it.is_dir ? '-' : (Math.round(it.size / 1024) + ' KB')) + '</td>' +
+                            '<td style="padding: 7px 12px; font-family: monospace; color: #64748b;">' + (it.mode || '-') + '</td>' +
+                            '<td style="padding: 7px 12px; color: #64748b;">' + (it.mtime || '-') + '</td>' +
+                            '</tr>';
+                    });
+                }
+                document.getElementById('modalFmTableBody').innerHTML = tbody;
+                document.getElementById('modalFmStatus').innerText = 'Total: ' + (res.items ? res.items.length : 0) + ' item di direktori aktif';
+            } else {
+                document.getElementById('modalFmTableBody').innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #dc2626;">' + (res ? res.message : 'Gagal membuka direktori') + '</td></tr>';
+            }
+        })
+        .catch(function(err) {
+            document.getElementById('modalFmTableBody').innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #dc2626;">Error: ' + err + '</td></tr>';
+        });
+}
+
+/* 7. USER ACCESS AJAX */
+function openUserAccessModal(appId, appName, serverName) {
+    activeAppId = appId;
+    document.getElementById('modalUserAppName').innerText = appName;
+    document.getElementById('modalUserServerName').innerText = serverName;
+    document.getElementById('userAccessModal').style.display = 'flex';
+    fetchUserAccess(appId, 'all');
+}
+
+function fetchUserAccess(appId, filter) {
+    document.getElementById('modalUserTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;"><i class="ph ph-spinner ph-spin"></i> Menghubungi database & mengambil daftar user...</td></tr>';
+
+    fetch("/monitor/apps/act/user_access?id=" + appId + "&filter_pegawai=" + filter)
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if (res && res.success) {
+                var tbody = '';
+                if (!res.users || res.users.length === 0) {
+                    tbody = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;">Tidak ada data user yang ditemukan pada skema database.</td></tr>';
+                } else {
+                    res.users.forEach(function(u, idx) {
+                        var statusBadge = u.status ? '<span class="badge-pill badge-svc-up">Aktif</span>' : '<span class="badge-pill badge-svc-down">Non-Aktif</span>';
+                        tbody += '<tr style="border-bottom: 1px solid #f1f5f9;">' +
+                            '<td style="padding: 7px 12px; text-align: center; color: #94a3b8;">' + (idx + 1) + '</td>' +
+                            '<td style="padding: 7px 12px; font-weight: 700; color: #1e293b;">' + (u.user_name || u.username || '-') + '</td>' +
+                            '<td style="padding: 7px 12px;">' + (u.nama || u.realname || '-') + '</td>' +
+                            '<td style="padding: 7px 12px; color: #64748b;">' + (u.email || '-') + '</td>' +
+                            '<td style="padding: 7px 12px;"><span class="chip" style="margin:0;">' + (u.group_name || u.role || 'User') + '</span></td>' +
+                            '<td style="padding: 7px 12px; text-align: center;">' + statusBadge + '</td>' +
+                            '</tr>';
+                    });
+                }
+                document.getElementById('modalUserTableBody').innerHTML = tbody;
+                document.getElementById('modalUserTotal').innerText = 'Total: ' + (res.users ? res.users.length : 0) + ' user terdaftar di database';
+            } else {
+                document.getElementById('modalUserTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #dc2626;">' + (res ? res.message : 'Gagal membaca data user') + '</td></tr>';
+            }
+        })
+        .catch(function(err) {
+            document.getElementById('modalUserTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #dc2626;">Error: ' + err + '</td></tr>';
+        });
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+window.onclick = function(e) {
+    var modals = ['serviceStatusModal', 'dumpDbModal', 'logViewerModal', 'gitPullModal', 'terminalModal', 'fileManagerModal', 'userAccessModal'];
+    modals.forEach(function(mId) {
+        var m = document.getElementById(mId);
+        if (m && e.target === m) {
+            m.style.display = 'none';
+        }
+    });
+};
+</script>
+
+</body>
+</html>

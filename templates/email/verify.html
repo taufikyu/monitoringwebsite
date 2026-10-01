@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .email-wrapper {
+            width: 100%;
+            background-color: #f9fafb;
+            padding: 40px 0;
+        }
+        .email-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #FF5A1F, #ff8a5c);
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .body {
+            padding: 40px;
+            text-align: center;
+        }
+        .body p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #4b5563;
+            margin-bottom: 24px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #FF5A1F;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 0 30px;
+            box-shadow: 0 4px 10px rgba(255, 90, 31, 0.3);
+        }
+        .footer {
+            background-color: #f3f4f6;
+            padding: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <table class="email-wrapper" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center">
+                <table class="email-content" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="header">
+                            <h1>Tool Digital</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="body">
+                            <h2>Halo, {{ name }}!</h2>
+                            <p>Terima kasih telah mendaftar di Tool Digital. Kami sangat senang menyambut Anda.</p>
+                            <p>Untuk mulai menggunakan dasbor kami, silakan verifikasi alamat email Anda dengan mengklik tombol di bawah ini:</p>
+                            
+                            <a href="{{ confirm_url }}" class="btn">Verifikasi Email Saya</a>
+                            
+                            <p style="font-size: 14px; color: #6b7280;">Jika Anda tidak merasa mendaftar di Tool Digital, Anda dapat mengabaikan email ini dengan aman.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer">
+                            <p>&copy; 2026 Tool Digital. Semua hak dilindungi undang-undang.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

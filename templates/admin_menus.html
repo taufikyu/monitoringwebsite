@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block page_title %}Menu Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-action {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .btn-action:hover {
+        background: #F4F4F5;
+        color: var(--text-main);
+    }
+
+    .badge-level-1 {
+        background-color: #F4F4F5;
+        color: #52525B;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .badge-level-2 {
+        background-color: #EFF6FF;
+        color: #2563EB;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .badge-level-3 {
+        background-color: #18181B;
+        color: #FFFFFF;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .badge-group {
+        background-color: #F4F4F5;
+        color: var(--text-main);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .status-active { background: #DCFCE7; color: #166534; }
+    .status-inactive { background: #FEE2E2; color: #991B1B; }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .premium-table th {
+        text-align: left;
+        padding: 14px 16px;
+        color: var(--text-light);
+        font-weight: 700;
+        font-size: 0.8rem;
+        border-bottom: 1px solid var(--border-subtle);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .premium-table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-main);
+        font-size: 0.92rem;
+        vertical-align: middle;
+    }
+
+    .premium-table tr:hover td {
+        background-color: #FAFAFA;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(8px);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-box {
+        background: #FFFFFF;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 520px;
+        padding: 30px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--border-subtle);
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text-main);
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid #E4E4E7;
+        background: #FAFAFA;
+        font-size: 14px;
+        font-family: inherit;
+        box-sizing: border-box;
+        transition: all 0.2s;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: #18181B;
+        background: #FFFFFF;
+        box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="margin: 0; color: var(--text-main); font-weight: 800; font-size: 1.3rem; letter-spacing: -0.3px;">Manajemen Menu & Leveling Dinamis</h3>
+            <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 0.88rem;">Atur judul, permission code, kategori grup, urutan posisi, status on/off, dan batas level akses pengguna untuk setiap menu.</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="{{ url_for('admin_roles') }}" class="btn-secondary">
+                <i class="ph ph-shield-check" style="font-size: 18px;"></i>
+                Role Groups
+            </a>
+            <form action="{{ url_for('admin_menu_sync') }}" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-secondary" title="Scan seluruh rute sistem dan sinkronkan ke database">
+                    <i class="ph ph-arrows-clockwise" style="font-size: 18px;"></i>
+                    Sinkronkan Rute
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="padding: 12px 16px; margin-bottom: 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 500; {% if category == 'success' %}background-color: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;{% else %}background-color: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;{% endif %}">
+              {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div style="overflow-x: auto;">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">Urutan</th>
+                    <th>Judul Menu</th>
+                    <th>Endpoint Rute</th>
+                    <th>Permission Code</th>
+                    <th>Ikon</th>
+                    <th>Kategori Grup</th>
+                    <th>Min. Level</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for menu in all_menus %}
+                <tr>
+                    <td style="font-weight: 700; color: var(--text-light);">#{{ menu.order }}</td>
+                    <td>
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 14px;">
+                            {{ menu.title }}
+                        </div>
+                        <small style="color: var(--text-light); font-family: monospace; font-size: 11px;">key: {{ menu.key }}</small>
+                    </td>
+                    <td>
+                        <code style="background: #F4F4F5; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #3F3F46;">{{ menu.route }}</code>
+                    </td>
+                    <td>
+                        {% if menu.permission_code %}
+                            <code style="background: #EFF6FF; color: #2563EB; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700;">{{ menu.permission_code }}</code>
+                        {% else %}
+                            <span style="color: var(--text-light); font-size: 11px;">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="{{ menu.icon }}" style="font-size: 20px; color: var(--text-main);"></i>
+                            <span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">{{ menu.icon }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge-group">{{ menu.group_name }}</span>
+                    </td>
+                    <td>
+                        {% if menu.min_level == 3 %}
+                            <span class="badge-level-3"><i class="ph ph-shield-check"></i> Level 3</span>
+                        {% elif menu.min_level == 2 %}
+                            <span class="badge-level-2"><i class="ph ph-star"></i> Level 2</span>
+                        {% else %}
+                            <span class="badge-level-1"><i class="ph ph-user"></i> Level 1</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if menu.is_active %}
+                            <span class="status-pill status-active"><i class="ph ph-check-circle"></i> Aktif</span>
+                        {% else %}
+                            <span class="status-pill status-inactive"><i class="ph ph-x-circle"></i> Nonaktif</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: flex; justify-content: flex-end; gap: 6px; align-items: center;">
+                            <!-- Edit Button -->
+                            <button class="btn-action" onclick="openEditModal({{ menu.id }}, '{{ menu.title | escape }}', '{{ menu.icon | escape }}', '{{ menu.group_name | escape }}', '{{ (menu.permission_code or '') | escape }}', {{ menu.min_level }}, {{ menu.order }})" title="Edit Menu & Permission">
+                                <i class="ph ph-pencil-simple" style="font-size: 16px; color: #2563EB;"></i> Edit
+                            </button>
+                            <!-- Toggle Active/Inactive -->
+                            <form action="{{ url_for('admin_menu_toggle', menu_id=menu.id) }}" method="POST" style="margin: 0; display: inline;">
+                                <button type="submit" class="btn-action" title="{% if menu.is_active %}Sembunyikan dari Sidebar{% else %}Tampilkan di Sidebar{% endif %}">
+                                    <i class="ph {% if menu.is_active %}ph-eye-slash" style="color: #EF4444;{% else %}ph-eye" style="color: #10B981;{% endif %} style="font-size: 16px;"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        Belum ada menu terdaftar. Silakan klik tombol "Sinkronkan Rute" di atas.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Edit Menu -->
+<div id="editMenuModal" class="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h4 style="margin: 0; font-weight: 800; font-size: 1.15rem; color: var(--text-main);">Edit Pengaturan Menu</h4>
+            <button onclick="closeEditModal()" style="background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted);">&times;</button>
+        </div>
+
+        <form id="editMenuForm" method="POST">
+            <div style="margin-bottom: 14px;">
+                <label class="form-label">Judul Tampilan Menu</label>
+                <input type="text" name="title" id="modalTitle" class="form-control" required>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label class="form-label">Permission Code (Hak Akses Terkait)</label>
+                <input type="text" name="permission_code" id="modalPermCode" class="form-control" placeholder="Contoh: menu.dashboard, admin.users">
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">Kode izin yang harus dimiliki role group pengguna agar menu ini tampil dan dapat diakses.</small>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label class="form-label">Class Ikon Phosphor</label>
+                <input type="text" name="icon" id="modalIcon" class="form-control" placeholder="ph ph-squares-four" required>
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">Contoh: <code>ph ph-squares-four</code>, <code>ph ph-shield-check</code>, <code>ph ph-users</code></small>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label class="form-label">Kategori / Nama Grup</label>
+                <input type="text" name="group_name" id="modalGroup" class="form-control" placeholder="Contoh: Navigasi, Manajemen Sistem" required>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+                <label class="form-label">Tingkat Akses Minimal (Leveling Fallback)</label>
+                <select name="min_level" id="modalMinLevel" class="form-control" style="cursor: pointer;">
+                    <option value="1">Level 1 - Member (Dapat dilihat oleh semua pengguna)</option>
+                    <option value="2">Level 2 - Pro / Creator (Hanya Pro & Admin)</option>
+                    <option value="3">Level 3 - Administrator (Khusus Admin Sistem)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 22px;">
+                <label class="form-label">Urutan Tampil (Order Weight)</label>
+                <input type="number" name="order" id="modalOrder" class="form-control" min="1" max="999" required>
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">Angka lebih kecil tampil lebih di atas.</small>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" onclick="closeEditModal()" class="btn-secondary">Batal</button>
+                <button type="submit" class="btn-primary">Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal(id, title, icon, group, permCode, minLevel, order) {
+    document.getElementById('editMenuForm').action = '/admin/menus/edit/' + id;
+    document.getElementById('modalTitle').value = title;
+    document.getElementById('modalIcon').value = icon;
+    document.getElementById('modalGroup').value = group;
+    document.getElementById('modalPermCode').value = permCode || '';
+    document.getElementById('modalMinLevel').value = minLevel;
+    document.getElementById('modalOrder').value = order;
+    
+    document.getElementById('editMenuModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('editMenuModal').style.display = 'none';
+}
+
+function handleOverlayClick(e) {
+    if (e.target.id === 'editMenuModal') {
+        closeEditModal();
+    }
+}
+</script>
+{% endblock %}

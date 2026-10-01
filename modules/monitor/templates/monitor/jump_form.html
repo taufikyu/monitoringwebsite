@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Tambah Rute Jump Host - Server Monitor{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        background: #ffffff;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+        padding: 24px 28px;
+        max-width: 680px;
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
+    .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 6px;
+    }
+    .form-control {
+        width: 100%;
+        padding: 9px 14px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--border-subtle);
+        background: #f8fafc;
+        font-size: 13.5px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .form-control:focus {
+        border-color: var(--primary);
+        background: #ffffff;
+    }
+    .form-help {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border-subtle);
+    }
+    .btn-action {
+        padding: 9px 18px;
+        border-radius: var(--radius-pill);
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    .btn-primary-custom { background: var(--primary); color: #fff; }
+    .btn-primary-custom:hover { background: #e04812; color: #fff; }
+    .btn-default-custom { background: #f1f5f9; color: var(--text-main); border-color: var(--border-subtle); }
+    .btn-default-custom:hover { background: #e2e8f0; }
+</style>
+
+<div class="content-header" style="margin-bottom: 20px;">
+    <h1 style="font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+        <i class="ph-duotone ph-git-merge" style="color: var(--primary);"></i> Tambah Rute Jump Host
+    </h1>
+    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+        Tentukan server perantara (bastion/jump host) yang digunakan sebelum menjangkau server target.
+    </p>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div style="padding: 12px 16px; border-radius: var(--radius-pill); margin-bottom: 16px; font-size: 13px; font-weight: 600; background: {{ '#ecfdf5' if category == 'success' else '#fef2f2' }}; color: {{ '#065f46' if category == 'success' else '#991b1b' }}; border: 1px solid {{ '#a7f3d0' if category == 'success' else '#fecaca' }};">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="form-container">
+    <form action="{{ url_for('monitor.jump_add') }}" method="POST">
+        <div class="form-group">
+            <label class="form-label">Server Target (Tujuan Akhir) <span style="color: #dc2626;">*</span></label>
+            <select name="server_id" class="form-control" required>
+                <option value="">-- Pilih Server Target --</option>
+                {% for s in servers %}
+                <option value="{{ s.id }}">{{ s.nama }} ({{ s.host }})</option>
+                {% endfor %}
+            </select>
+            <div class="form-help">Server internal atau target yang ingin diakses melalui perantara jump.</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Jump Server (Bastion / Perantara) <span style="color: #dc2626;">*</span></label>
+            <select name="jump_server_id" class="form-control" required>
+                <option value="">-- Pilih Jump Server Perantara --</option>
+                {% for s in servers %}
+                <option value="{{ s.id }}">{{ s.nama }} ({{ s.host }})</option>
+                {% endfor %}
+            </select>
+            <div class="form-help">Server gateway yang memiliki akses publik untuk menghubungkan tunnel SSH.</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Urutan Hop (Hop Order) <span style="color: #dc2626;">*</span></label>
+            <input type="number" name="urutan" class="form-control" value="1" min="1" max="10" required>
+            <div class="form-help">Gunakan 1 jika ini adalah lompatan pertama (hop-1). Untuk multi-hop bertingkat, tentukan urutan 2, 3, dst.</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-action btn-primary-custom">
+                <i class="ph ph-floppy-disk"></i> Simpan Rute Jump
+            </button>
+            <a href="{{ url_for('monitor.jump_list') }}" class="btn-action btn-default-custom">
+                Batal
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

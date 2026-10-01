@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Ubah Konfigurasi Aplikasi' if app else 'Tambah Aplikasi Baru' }} - Server Monitor{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        background: #ffffff;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+        padding: 24px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        margin-bottom: 24px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    .form-section h3 {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-main);
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+    }
+    .form-group {
+        margin-bottom: 14px;
+    }
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: var(--text-main);
+    }
+    .form-group .form-control {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        font-size: 13.5px;
+        background: #f8fafc;
+        outline: none;
+    }
+    .form-group .form-control:focus {
+        border-color: var(--primary);
+        background: #ffffff;
+    }
+    .form-help {
+        font-size: 11.5px;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+</style>
+
+<div class="content-header" style="margin-bottom: 20px;">
+    <h1 style="font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+        <i class="ph-duotone ph-cube" style="color: var(--primary);"></i>
+        {{ 'Ubah Profil Aplikasi' if app else 'Tambah Aplikasi Baru' }}
+    </h1>
+</div>
+
+<div class="form-container">
+    <form method="POST">
+        <!-- 1. IDENTITAS APLIKASI -->
+        <div class="form-section">
+            <h3><i class="ph ph-cube text-primary"></i> 1. Identitas &amp; Server Induk</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Server Induk (Host) <span style="color:red;">*</span></label>
+                    <select name="server_id" class="form-control" required>
+                        <option value="">-- Pilih Server Induk --</option>
+                        {% for s in servers %}
+                        <option value="{{ s.id }}" {{ 'selected' if app and app.server_id == s.id else '' }}>
+                            {{ s.nama }} ({{ s.host }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nama Aplikasi <span style="color:red;">*</span></label>
+                    <input type="text" name="nama" class="form-control" value="{{ app.nama if app else '' }}" placeholder="Contoh: Web Retribusi Daerah, PBB-P2" required>
+                </div>
+                <div class="form-group">
+                    <label>Kode Aplikasi (Opsional)</label>
+                    <input type="text" name="kode" class="form-control" value="{{ app.kode if app else '' }}" placeholder="Contoh: APP-WEBR, APP-PBB">
+                </div>
+                <div class="form-group">
+                    <label>Path File .ini Aplikasi</label>
+                    <input type="text" name="app_ini_path" class="form-control" value="{{ app.app_ini_path if app else '' }}" placeholder="/home/webr/apps/webr/devel.ini">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. SERVICE SYSTEMD / SUPERVISOR -->
+        <div class="form-section">
+            <h3><i class="ph ph-cogs text-warning"></i> 2. Daemon Service Manager</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Tipe Service Manager</label>
+                    <select name="service_type" class="form-control">
+                        <option value="systemd" {{ 'selected' if not app or app.service_type == 'systemd' else '' }}>Systemd Service (systemctl)</option>
+                        <option value="supervisor" {{ 'selected' if app and app.service_type == 'supervisor' else '' }}>Supervisor (supervisorctl)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nama Service / Target</label>
+                    <input type="text" name="service_path" class="form-control" value="{{ app.service_path if app else '' }}" placeholder="Contoh: webr.service atau all">
+                    <div class="form-help">Untuk Systemd: nama service unit. Untuk Supervisor: nama program / all.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. DATABASE KHUSUS APLIKASI -->
+        <div class="form-section">
+            <h3><i class="ph ph-database text-info"></i> 3. Database Terisolasi (Opsional)</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Database Host</label>
+                    <input type="text" name="db_host" class="form-control" value="{{ app.db_host if app else '127.0.0.1' }}">
+                </div>
+                <div class="form-group">
+                    <label>Database Port</label>
+                    <input type="number" name="db_port" class="form-control" value="{{ app.db_port if app else 5432 }}">
+                </div>
+                <div class="form-group">
+                    <label>Nama Database</label>
+                    <input type="text" name="db_name" class="form-control" value="{{ app.db_name if app else '' }}" placeholder="Contoh: webr_db">
+                </div>
+                <div class="form-group">
+                    <label>Database Username</label>
+                    <input type="text" name="db_user" class="form-control" value="{{ app.db_user if app else '' }}" placeholder="postgres">
+                </div>
+                <div class="form-group">
+                    <label>Database Password</label>
+                    <input type="password" name="db_password" class="form-control" placeholder="{{ 'Biarkan kosong jika tidak diubah' if app else 'Password database' }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. SUDO & USER LINUX -->
+        <div class="form-section" style="border-bottom: none;">
+            <h3><i class="ph ph-shield text-danger"></i> 4. Hak Akses File &amp; Switch User</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Switch User (su &lt;user&gt;)</label>
+                    <input type="text" name="su_user" class="form-control" value="{{ app.su_user if app else '' }}" placeholder="Contoh: webr, postgres">
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 25px;">
+                    <input type="checkbox" name="use_sudo" id="use_sudo" value="1" {{ 'checked' if app and app.use_sudo else '' }}>
+                    <label for="use_sudo" style="margin: 0; cursor: pointer;">Gunakan Hak Akses Sudo (Root)</label>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <a href="{{ url_for('monitor.app_list') }}" class="btn-action btn-default-custom" style="padding: 10px 18px; border-radius: 8px; text-decoration: none;">Batal</a>
+            <button type="submit" class="btn-action btn-primary-custom" style="padding: 10px 24px; border-radius: 8px;">
+                <i class="ph ph-floppy-disk"></i> Simpan Profil Aplikasi
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
